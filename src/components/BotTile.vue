@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import BloubBot from '@/components/BloubBot.vue'
 import { DEFAULT_EXPRESSION } from '@/bot/expressions'
-import { DEFAULT_COLOR, DEFAULT_SHAPE } from '@/bot/skins'
+import {
+  DEFAULT_COLOR,
+  DEFAULT_GRADIENT,
+  DEFAULT_GRADIENT_TYPE,
+  DEFAULT_SHAPE
+} from '@/bot/skins'
 import type { StateId } from '@/bot/states'
 
 /**
@@ -21,6 +26,9 @@ withDefaults(
     state?: StateId
     shape?: string
     color?: string
+    gradient?: string
+    gradientType?: 'linear' | 'radial'
+    gradientAngle?: number
     expression?: string
     size?: number
   }>(),
@@ -28,6 +36,9 @@ withDefaults(
     state: 'idle',
     shape: DEFAULT_SHAPE,
     color: DEFAULT_COLOR,
+    gradient: DEFAULT_GRADIENT,
+    gradientType: DEFAULT_GRADIENT_TYPE,
+    gradientAngle: 135,
     expression: DEFAULT_EXPRESSION,
     size: 60
   }
@@ -47,6 +58,9 @@ withDefaults(
       :size="size"
       :shape="shape"
       :color="color"
+      :gradient="gradient"
+      :gradient-type="gradientType"
+      :gradient-angle="gradientAngle"
       :expression="expression"
       :frozen-at="frozenAt"
     />

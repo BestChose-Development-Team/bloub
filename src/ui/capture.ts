@@ -13,6 +13,7 @@
 import { createApp, h, nextTick, ref } from 'vue'
 import BloubBot from '@/components/BloubBot.vue'
 import type { Block } from '@/bot/cycles'
+import type { GradientType } from '@/bot/skins'
 import { gifAnime, gifIndexe, indexe, nouvellePalette, recense, svgAnime } from './anime'
 import { arrete, DEMI_ECRAN, sansCommentaires, viewBoxExport } from './export'
 
@@ -245,6 +246,9 @@ export async function cycleVersGif(
 export interface ReglagesBot {
   shape: string
   color: string
+  gradient?: string
+  gradientType?: GradientType
+  gradientAngle?: number
   expression: string
 }
 

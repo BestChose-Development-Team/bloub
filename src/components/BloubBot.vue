@@ -10,11 +10,14 @@ import {
   EXPRESSION_BY_ID
 } from '@/bot/expressions'
 import {
-  COLOR_BY_ID,
   DEFAULT_COLOR,
+  DEFAULT_GRADIENT,
+  DEFAULT_GRADIENT_TYPE,
   DEFAULT_SHAPE,
   SHAPE_BY_ID,
-  mixHex
+  mixHex,
+  resolveColor,
+  resolveGradient
 } from '@/bot/skins'
 import { blockAt, defaultCycle, offsetOf, type Block } from '@/bot/cycles'
 import { DEMI_VIEWBOX, RAYON } from '@/bot/repere'
@@ -27,6 +30,11 @@ const props = withDefaults(
     shape?: string
     /** identifiant de couleur du personnalisateur */
     color?: string
+    /** identifiant du degrade du corps, `none` conserve la couleur unie */
+    gradient?: string
+    /** geometrie du degrade du corps */
+    gradientType?: 'linear' | 'radial'
+    gradientAngle?: number
     /** identifiant d'expression de repos du personnalisateur */
     expression?: string
     /** couleur du fond, utilisee pour la brume de profondeur des particules */
@@ -60,6 +68,9 @@ const props = withDefaults(
     size: 320,
     shape: DEFAULT_SHAPE,
     color: DEFAULT_COLOR,
+    gradient: DEFAULT_GRADIENT,
+    gradientType: DEFAULT_GRADIENT_TYPE,
+    gradientAngle: 135,
     expression: DEFAULT_EXPRESSION,
     paper: '#f9f9f9',
     frozenAt: undefined,
@@ -88,13 +99,21 @@ const R = RAYON
 const VB = DEMI_VIEWBOX
 
 const shapeRadii = computed(() => SHAPE_BY_ID.get(props.shape)?.radii ?? null)
-const ink = computed(() => COLOR_BY_ID.get(props.color)?.hex ?? '#0a0a0c')
+const ink = computed(() => resolveColor(props.color))
+const bodyGradient = computed(() => resolveGradient(props.gradient))
+const gradientVector = computed(() => {
+  const angle = (Number.isFinite(props.gradientAngle) ? props.gradientAngle : 135) * Math.PI / 180
+  const x = Math.sin(angle), y = -Math.cos(angle)
+  const extent = VB * (Math.abs(x) + Math.abs(y))
+  return { x: x * extent, y: y * extent }
+})
 const expression = computed(() => EXPRESSION_BY_ID.get(props.expression) ?? null)
 
 const engine = new BotEngine(R, state.value, shapeRadii.value, expression.value)
 const frame = shallowRef<BotFrame>(engine.sample(props.frozenAt ?? 0))
 const uid = Math.random().toString(36).slice(2, 8)
 const maskId = `bot-mask-${uid}`
+const bodyGradientId = `bot-gradient-${uid}`
 
 let raf = 0
 let nextAt = Infinity
@@ -492,6 +511,37 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
     :aria-label="t('app.botAria')"
   >
     <defs>
+      <linearGradient
+        v-if="bodyGradient && props.gradientType === 'linear'"
+        :id="bodyGradientId"
+        gradientUnits="userSpaceOnUse"
+        :x1="-gradientVector.x"
+        :y1="-gradientVector.y"
+        :x2="gradientVector.x"
+        :y2="gradientVector.y"
+      >
+        <stop
+          v-for="(c, i) in bodyGradient.stops"
+          :key="i"
+          :offset="(bodyGradient.positions?.[i] ?? i * 100 / (bodyGradient.stops.length - 1)) / 100"
+          :stop-color="c"
+        />
+      </linearGradient>
+      <radialGradient
+        v-if="bodyGradient && props.gradientType === 'radial'"
+        :id="bodyGradientId"
+        gradientUnits="userSpaceOnUse"
+        cx="0"
+        cy="0"
+        :r="VB * 1.42"
+      >
+        <stop
+          v-for="(c, i) in bodyGradient.stops"
+          :key="i"
+          :offset="(bodyGradient.positions?.[i] ?? i * 100 / (bodyGradient.stops.length - 1)) / 100"
+          :stop-color="c"
+        />
+      </radialGradient>
       <!--
         Les yeux sont de vrais trous perces dans le corps (comme sur x.ai), pas
         des formes blanches posees dessus : ils restent donc automatiquement
@@ -581,7 +631,13 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
       -->
       <path :d="frame.bodyPath" :fill="props.paper" />
       <g :mask="`url(#${maskId})`">
-        <rect :x="-VB" :y="-VB" :width="VB * 2" :height="VB * 2" :fill="ink" />
+        <rect
+          :x="-VB"
+          :y="-VB"
+          :width="VB * 2"
+          :height="VB * 2"
+          :fill="bodyGradient ? `url(#${bodyGradientId})` : ink"
+        />
       </g>
     </g>
 

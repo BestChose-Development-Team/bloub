@@ -32,7 +32,31 @@ const zh: typeof fr = {
     animations: '动画',
     shape: '形状',
     expression: '表情',
-    color: '颜色'
+    color: '颜色',
+    colorHex: '自定义 HEX',
+    colorPicker: '选择自定义颜色',
+    gradient: '渐变颜色',
+    gradientLinear: '线性',
+    gradientRadial: '径向',
+    gradientAngle: '渐变角度',
+    gradientStops: '渐变锚点',
+    gradientAdd: '添加',
+    gradientRemove: '删除锚点',
+    gradientPosition: '位置',
+    gradientStart: '起始',
+    gradientEnd: '结束',
+    gradientSwap: '交换渐变颜色',
+    gradientStartPicker: '选择渐变起始颜色',
+    gradientEndPicker: '选择渐变结束颜色'
+  },
+
+  gradients: {
+    none: '无渐变',
+    sunset: '落日',
+    ocean: '海洋',
+    aurora: '极光',
+    candy: '糖果',
+    twilight: '暮色'
   },
 
   export: {

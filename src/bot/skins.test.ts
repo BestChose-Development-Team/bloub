@@ -2,8 +2,44 @@ import { describe, expect, it } from 'vitest'
 import { BotEngine, type RenderedEye } from './engine'
 import { decalageDesYeux, POUR_TESTS } from './eyefit'
 import { EXPRESSIONS } from './expressions'
-import { DEFAULT_SHAPE, SHAPES, SHAPE_BY_ID } from './skins'
+import {
+  DEFAULT_SHAPE,
+  SHAPES,
+  SHAPE_BY_ID,
+  customGradient,
+  positionedGradient,
+  gradientAnchors,
+  isGradient,
+  normalizeHex,
+  resolveGradient
+} from './skins'
 import { STATES, type StateId } from './states'
+
+describe('couleurs libres', () => {
+  it('preserves positioned stops through storage and sorts them for SVG rendering', () => {
+    const value = positionedGradient([{ color: '#ff0000', position: 80 }, { color: '#00ff00', position: 15.5 }, { color: '#0000ff', position: 80 }])
+    expect(isGradient(value)).toBe(true)
+    expect(resolveGradient(value)?.positions).toEqual([15.5, 80, 80])
+    expect(resolveGradient(value)?.stops).toEqual(['#00ff00', '#ff0000', '#0000ff'])
+    expect(gradientAnchors('twilight').map(s => s.position)).toEqual([0, 50, 100])
+    expect(gradientAnchors(customGradient('#123456', '#abcdef')).map(s => s.position)).toEqual([0, 100])
+  })
+
+  it('rejects invalid persisted anchors', () => {
+    for (const value of ['stops:#123456@0', 'stops:#123456@-1:#ffffff@100', 'stops:#123456@0:#ffffff@101', 'stops:red@0:#ffffff@100', 'stops:#123456@NaN:#ffffff@100']) expect(isGradient(value)).toBe(false)
+  })
+  it('normalise les saisies hexadecimales sans accepter de CSS arbitraire', () => {
+    expect(normalizeHex(' F0a ')).toBe('#ff00aa')
+    expect(normalizeHex('#12ABef')).toBe('#12abef')
+    expect(normalizeHex('red')).toBeNull()
+  })
+
+  it('encode et relit les deux bornes du degrade personnalise', () => {
+    const value = customGradient('#123456', '#abcdef')
+    expect(value).toBe('custom:#123456:#abcdef')
+    expect(resolveGradient(value)?.stops).toEqual(['#123456', '#abcdef'])
+  })
+})
 
 /**
  * Les formes du personnalisateur, mesurees contre le corps qu'elles remplacent.

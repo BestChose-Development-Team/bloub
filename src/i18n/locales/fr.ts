@@ -44,7 +44,31 @@ export default {
     animations: 'Animation',
     shape: 'Forme',
     expression: 'Expression',
-    color: 'Couleur'
+    color: 'Couleur',
+    colorHex: 'HEX personnalisé',
+    colorPicker: 'Choisir une couleur personnalisée',
+    gradient: 'Dégradé',
+    gradientLinear: 'Linéaire',
+    gradientRadial: 'Radial',
+    gradientAngle: 'Angle',
+    gradientStops: 'Points du dégradé',
+    gradientAdd: 'Ajouter',
+    gradientRemove: 'Supprimer le point',
+    gradientPosition: 'Position',
+    gradientStart: 'Début',
+    gradientEnd: 'Fin',
+    gradientSwap: 'Inverser les couleurs du dégradé',
+    gradientStartPicker: 'Choisir la couleur de début',
+    gradientEndPicker: 'Choisir la couleur de fin'
+  },
+
+  gradients: {
+    none: 'Sans dégradé',
+    sunset: 'Coucher de soleil',
+    ocean: 'Océan',
+    aurora: 'Aurore',
+    candy: 'Bonbon',
+    twilight: 'Crépuscule'
   },
 
   /**

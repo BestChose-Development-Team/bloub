@@ -8,7 +8,14 @@ import { t } from '@/i18n'
  * Carte « + » de la piste et sa palette. Ajouter depuis la piste evite d'aller
  * jusqu'au panneau de droite quand on monte.
  */
-defineProps<{ shape: string; color: string; expression: string }>()
+defineProps<{
+  shape: string
+  color: string
+  gradient: string
+  gradientType: 'linear' | 'radial'
+  gradientAngle: number
+  expression: string
+}>()
 const emit = defineEmits<{ pick: [state: StateId] }>()
 
 /** Les animations dans l'ordre de la video. */
@@ -103,6 +110,9 @@ function pick(state: StateId) {
         :state="s.id"
         :shape="shape"
         :color="color"
+        :gradient="gradient"
+        :gradient-type="gradientType"
+        :gradient-angle="gradientAngle"
         :expression="expression"
         :frozen-at="POSES[s.id]"
         @click="pick(s.id)"

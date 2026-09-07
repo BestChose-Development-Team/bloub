@@ -26,6 +26,9 @@ const props = defineProps<{
   elapsed: number
   shape: string
   color: string
+  gradient: string
+  gradientType: 'linear' | 'radial'
+  gradientAngle: number
   expression: string
 }>()
 
@@ -409,6 +412,9 @@ function onRulerMove(e: PointerEvent) {
                   :size="Math.min(56, Math.max(30, width(i) * 0.5))"
                   :shape="shape"
                   :color="color"
+                  :gradient="gradient"
+                  :gradient-type="gradientType"
+                  :gradient-angle="gradientAngle"
                   :expression="expression"
                   :paper="i === block ? '#ffffff' : '#f2f2f2'"
                   :frozen-at="POSES[b.state]"
@@ -464,6 +470,9 @@ function onRulerMove(e: PointerEvent) {
             <BlockPicker
               :shape="shape"
               :color="color"
+              :gradient="gradient"
+              :gradient-type="gradientType"
+              :gradient-angle="gradientAngle"
               :expression="expression"
               @pick="emit('add', $event)"
             />

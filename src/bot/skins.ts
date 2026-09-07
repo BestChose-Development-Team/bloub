@@ -134,6 +134,90 @@ export const COLORS: BotColor[] = [
 export const COLOR_BY_ID = new Map<string, BotColor>(COLORS.map((c) => [c.id, c]))
 export const DEFAULT_COLOR = 'encre'
 
+/** Accepte aussi une saisie sans `#` et la notation courte, puis stocke toujours #rrggbb. */
+export function normalizeHex(value: string): string | null {
+  const raw = value.trim().replace(/^#/, '')
+  if (/^[0-9a-f]{3}$/i.test(raw)) {
+    return `#${[...raw].map((c) => c + c).join('').toLowerCase()}`
+  }
+  return /^[0-9a-f]{6}$/i.test(raw) ? `#${raw.toLowerCase()}` : null
+}
+
+export function resolveColor(value: string): string {
+  return COLOR_BY_ID.get(value)?.hex ?? normalizeHex(value) ?? '#0a0a0c'
+}
+
+export type GradientId = 'none' | 'sunset' | 'ocean' | 'aurora' | 'candy' | 'twilight'
+
+export interface BotGradient {
+  id: GradientId
+  /** Couleurs dans l'ordre du coin haut-gauche au coin bas-droit. */
+  stops: string[]
+  positions?: number[]
+}
+
+/** Degrades courts et francs : ils restent lisibles jusque dans les petites vignettes. */
+export const GRADIENTS: BotGradient[] = [
+  { id: 'sunset', stops: ['#ff5f6d', '#ffc371'] },
+  { id: 'ocean', stops: ['#2563eb', '#22d3ee'] },
+  { id: 'aurora', stops: ['#10b981', '#a3e635'] },
+  { id: 'candy', stops: ['#ec4899', '#8b5cf6'] },
+  { id: 'twilight', stops: ['#312e81', '#c026d3', '#fb7185'] }
+]
+
+export const GRADIENT_BY_ID = new Map<string, BotGradient>(GRADIENTS.map((g) => [g.id, g]))
+export const DEFAULT_GRADIENT: GradientId = 'none'
+
+export type GradientType = 'linear' | 'radial'
+export const DEFAULT_GRADIENT_TYPE: GradientType = 'linear'
+
+export function isGradientType(value: string): value is GradientType {
+  return value === 'linear' || value === 'radial'
+}
+
+const CUSTOM_GRADIENT = /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i
+
+export interface GradientStop { color: string; position: number }
+
+export function positionedGradient(stops: GradientStop[]): string {
+  return `stops:${stops.map((s) => `${s.color}@${s.position}`).join(':')}`
+}
+
+export function gradientAnchors(value: string): GradientStop[] {
+  const gradient = resolveGradient(value)
+  return gradient?.stops.map((color, i) => ({ color, position: gradient.positions?.[i] ?? i * 100 / (gradient.stops.length - 1) })) ?? []
+}
+
+export function customGradient(from: string, to: string): string {
+  return `custom:${normalizeHex(from) ?? '#2563eb'}:${normalizeHex(to) ?? '#22d3ee'}`
+}
+
+/** Resout aussi le degrade libre encode dans le stockage, sans accepter du CSS arbitraire. */
+export function resolveGradient(value: string): BotGradient | undefined {
+  const preset = GRADIENT_BY_ID.get(value)
+  if (preset) return preset
+  if (value.startsWith('stops:')) {
+    const parts = value.slice(6).split(':')
+    if (parts.length < 2 || parts.length > 20) return undefined
+    const anchors: GradientStop[] = []
+    for (const part of parts) {
+      const match = /^(#[0-9a-f]{6})@(\d+(?:\.\d+)?)$/i.exec(part)
+      if (!match || Number(match[2]) > 100) return undefined
+      anchors.push({ color: match[1]!.toLowerCase(), position: Number(match[2]) })
+    }
+    anchors.sort((a, b) => a.position - b.position)
+    return { id: 'none', stops: anchors.map(s => s.color), positions: anchors.map(s => s.position) }
+  }
+  const match = value.match(CUSTOM_GRADIENT)
+  return match
+    ? { id: 'none', stops: [match[1]!.toLowerCase(), match[2]!.toLowerCase()] }
+    : undefined
+}
+
+export function isGradient(value: string): boolean {
+  return value === 'none' || Boolean(resolveGradient(value))
+}
+
 /** Melange deux couleurs hex. Sert a la brume de profondeur des particules. */
 export function mixHex(from: string, to: string, t: number): string {
   const parse = (h: string) => {

@@ -29,6 +29,9 @@ const props = defineProps<{
   elapsed: number
   shape: string
   color: string
+  gradient: string
+  gradientType: 'linear' | 'radial'
+  gradientAngle: number
   expression: string
 }>()
 
@@ -254,6 +257,9 @@ function onRemove() {
         :elapsed="elapsed"
         :shape="shape"
         :color="color"
+        :gradient="gradient"
+        :gradient-type="gradientType"
+        :gradient-angle="gradientAngle"
         :expression="expression"
         @update:blocks="(b: Block[]) => edit({ blocks: b })"
         @add="(s: StateId) => edit({ blocks: blocksWith(blocks, s) })"

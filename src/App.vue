@@ -54,7 +54,17 @@ import {
   type Cycle
 } from '@/bot/cycles'
 import { DEFAULT_EXPRESSION, EXPRESSION_BY_ID } from '@/bot/expressions'
-import { COLOR_BY_ID, DEFAULT_COLOR, DEFAULT_SHAPE, SHAPE_BY_ID } from '@/bot/skins'
+import {
+  COLOR_BY_ID,
+  DEFAULT_COLOR,
+  DEFAULT_GRADIENT,
+  DEFAULT_GRADIENT_TYPE,
+  DEFAULT_SHAPE,
+  SHAPE_BY_ID,
+  isGradient,
+  isGradientType,
+  normalizeHex
+} from '@/bot/skins'
 import { POSES, SEQUENCE, STATES, type StateId } from '@/bot/states'
 
 /**
@@ -439,13 +449,23 @@ const droite = computed(() => !nue.value && view.value !== 'reglages')
 /* ------------------------------------------------------------------- skins */
 
 const shape = ref(stored('forme', DEFAULT_SHAPE, (v) => SHAPE_BY_ID.has(v)))
-const color = ref(stored('couleur', DEFAULT_COLOR, (v) => COLOR_BY_ID.has(v)))
+const color = ref(
+  stored('couleur', DEFAULT_COLOR, (v) => COLOR_BY_ID.has(v) || Boolean(normalizeHex(v)))
+)
+const gradient = ref(stored('degrade', DEFAULT_GRADIENT, isGradient))
+const gradientAngle = ref(Number(stored('degradeAngle', '135', (v) => v.trim() !== '' && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 360)))
+watch(gradientAngle, (v) => ecris('degradeAngle', String(v)))
+const gradientType = ref(
+  stored('degradeType', DEFAULT_GRADIENT_TYPE, isGradientType) as 'linear' | 'radial'
+)
 const expression = ref(
   stored('expression', DEFAULT_EXPRESSION, (v) => EXPRESSION_BY_ID.has(v))
 )
 
 watch(shape, (v) => ecris('forme', v))
 watch(color, (v) => ecris('couleur', v))
+watch(gradient, (v) => ecris('degrade', v))
+watch(gradientType, (v) => ecris('degradeType', v))
 watch(expression, (v) => ecris('expression', v))
 
 /**
@@ -595,7 +615,14 @@ async function exporteCycle() {
   const images = cycleImages(totalDuration(blocs), format)
   const pas = cyclePas(format)
   const taille = CYCLE_TAILLE[format]
-  const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+  const reglages = {
+    shape: shape.value,
+    color: color.value,
+    gradient: gradient.value,
+    gradientType: gradientType.value,
+    gradientAngle: gradientAngle.value,
+    expression: expression.value
+  }
   const suit = (fait: number, total: number) => (avancementCycle.value = fait / total)
 
   avancementCycle.value = 0
@@ -684,11 +711,25 @@ async function exporte(id: ActionId, confirme = false) {
     if (action.mode === 'anime') {
       // L'animation ne part PAS du SVG affiche : elle est rejouee depuis le debut
       // sur une instance hors ecran. Cf. `sequenceDuBot`.
-      const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+      const reglages = {
+        shape: shape.value,
+        color: color.value,
+        gradient: gradient.value,
+        gradientType: gradientType.value,
+        gradientAngle: gradientAngle.value,
+        expression: expression.value
+      }
       telecharge(await versSvgAnime(reglages, action.taille, ANIM_IMAGES, ANIM_PAS), nom())
       etatExport.value = 'exporte'
     } else if (action.mode === 'gif') {
-      const reglages = { shape: shape.value, color: color.value, expression: expression.value }
+      const reglages = {
+        shape: shape.value,
+        color: color.value,
+        gradient: gradient.value,
+        gradientType: gradientType.value,
+        gradientAngle: gradientAngle.value,
+        expression: expression.value
+      }
       const fond = couleurDeFond(fondGif.value)
       telecharge(await versGifAnime(reglages, action.taille, GIF_IMAGES, GIF_PAS, fond), nom())
       etatExport.value = 'exporte'
@@ -753,6 +794,9 @@ watch(
           :size="210"
           :shape="shape"
           :color="color"
+          :gradient="gradient"
+          :gradient-type="gradientType"
+          :gradient-angle="gradientAngle"
           :expression="expression"
           :frozen-at="POSES[s.id]"
         />
@@ -871,6 +915,9 @@ watch(
             :size="preview ? 560 : 440"
             :shape="forme"
             :color="color"
+            :gradient="gradient"
+            :gradient-type="gradientType"
+            :gradient-angle="gradientAngle"
             :expression="humeur ?? expression"
             :follow="view === 'reglages'"
             :gaze="intro ? INTRO_GAZE : null"
@@ -959,6 +1006,9 @@ watch(
               :state="s.id"
               :shape="shape"
               :color="color"
+              :gradient="gradient"
+              :gradient-type="gradientType"
+              :gradient-angle="gradientAngle"
               :expression="expression"
               :frozen-at="POSES[s.id]"
               @click="addBlock(s.id)"
@@ -971,6 +1021,9 @@ watch(
           <Customizer
             v-model:shape="shape"
             v-model:color="color"
+            v-model:gradient="gradient"
+            v-model:gradient-type="gradientType"
+            v-model:gradient-angle="gradientAngle"
             v-model:expression="expression"
           />
         </template>
@@ -997,6 +1050,9 @@ watch(
       :elapsed="elapsed"
       :shape="shape"
       :color="color"
+      :gradient="gradient"
+      :gradient-type="gradientType"
+      :gradient-angle="gradientAngle"
       :expression="expression"
       @seek="onSeek"
       @preview="preview = true"

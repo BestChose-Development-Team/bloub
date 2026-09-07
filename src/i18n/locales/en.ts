@@ -27,7 +27,31 @@ const en: typeof fr = {
     animations: 'Animation',
     shape: 'Shape',
     expression: 'Expression',
-    color: 'Colour'
+    color: 'Colour',
+    colorHex: 'Custom HEX',
+    colorPicker: 'Choose a custom colour',
+    gradient: 'Gradient',
+    gradientLinear: 'Linear',
+    gradientRadial: 'Radial',
+    gradientAngle: 'Angle',
+    gradientStops: 'Stops',
+    gradientAdd: 'Add',
+    gradientRemove: 'Remove stop',
+    gradientPosition: 'Position',
+    gradientStart: 'Start',
+    gradientEnd: 'End',
+    gradientSwap: 'Swap gradient colours',
+    gradientStartPicker: 'Choose the start colour',
+    gradientEndPicker: 'Choose the end colour'
+  },
+
+  gradients: {
+    none: 'No gradient',
+    sunset: 'Sunset',
+    ocean: 'Ocean',
+    aurora: 'Aurora',
+    candy: 'Candy',
+    twilight: 'Twilight'
   },
 
   export: {
