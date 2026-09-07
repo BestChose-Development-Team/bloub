@@ -66,6 +66,8 @@ const en: typeof fr = {
     cycle_mp4: 'MP4 video',
     cycle_mp4_aide: 'Light and smooth, needs a background',
     cycle_gif: 'Animated GIF',
+    cycle_svg: 'Animated SVG',
+    cycle_svg_aide: 'Transparent vectors, scales cleanly; larger for long cycles',
     cycle_gif_aide: 'Plays anywhere, heavier',
     cycleProgress: 'Exporting…',
     cycleReessayer: 'Try again',

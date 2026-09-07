@@ -71,6 +71,8 @@ const zh: typeof fr = {
     cycle_mp4: 'MP4 视频',
     cycle_mp4_aide: '轻巧流畅，必须有背景',
     cycle_gif: 'GIF 动图',
+    cycle_svg: 'SVG 动画',
+    cycle_svg_aide: '透明矢量，可无限放大，长序列体积较大',
     cycle_gif_aide: '到处可播，体积更大',
     cycleProgress: '正在导出…',
     cycleReessayer: '重试',

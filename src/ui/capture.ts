@@ -12,7 +12,7 @@
 
 import { createApp, h, nextTick, ref } from 'vue'
 import BloubBot from '@/components/BloubBot.vue'
-import type { Block } from '@/bot/cycles'
+import { totalDuration, type Block } from '@/bot/cycles'
 import type { GradientType } from '@/bot/skins'
 import { gifAnime, gifIndexe, indexe, nouvellePalette, recense, svgAnime } from './anime'
 import { arrete, DEMI_ECRAN, sansCommentaires, viewBoxExport } from './export'
@@ -136,6 +136,68 @@ export async function copieTexte(texte: string) {
 
 /** Combien d'images faites sur combien, pour la barre de progression. */
 export type Avancement = (fait: number, total: number) => void
+
+/**
+ * Feuilletage vectoriel autonome, sans script ni rasterisation. Chaque image
+ * garde son masque et ses gradients, renommes pour ne jamais viser une autre
+ * image. SMIL ne rend visible qu'une image a la fois, a 30 images/s.
+ */
+export async function cycleVersSvg(
+  reglages: ReglagesBot,
+  blocs: Block[],
+  taille: number,
+  images: number,
+  avance?: Avancement,
+  signal?: AbortSignal
+): Promise<Blob> {
+  arrete(signal)
+  const duree = totalDuration(blocs)
+  if (!(duree > 0) || !Number.isInteger(images) || images < 1) {
+    throw new Error('sequence SVG vide')
+  }
+  const lecteur = await ouvreCycle(reglages, blocs, taille)
+  try {
+    const morceaux: string[] = []
+    for (let i = 0; i < images; i++) {
+      arrete(signal)
+      const svg = (await lecteur.rendre(i * duree / images)).cloneNode(true) as SVGSVGElement
+      const ids = new Map<string, string>()
+      for (const element of svg.querySelectorAll('[id]')) {
+        const id = element.getAttribute('id')!
+        ids.set(id, `frame-${i}-${id}`)
+        element.setAttribute('id', ids.get(id)!)
+      }
+      for (const element of svg.querySelectorAll('*')) {
+        for (const attr of [...element.attributes]) {
+          const valeur = attr.value.replace(/url\(#([^)]+)\)/g, (original, id: string) =>
+            ids.has(id) ? `url(#${ids.get(id)})` : original
+          )
+          element.setAttribute(attr.name, valeur)
+        }
+      }
+      // Inclure 0 et 1 sans dates dupliquees, y compris pour une image unique.
+      const dates = [0]
+      const valeurs = [i === 0 ? 'inline' : 'none']
+      if (i > 0) { dates.push(i / images); valeurs.push('inline') }
+      if (i + 1 < images) { dates.push((i + 1) / images); valeurs.push('none') }
+      dates.push(1)
+      valeurs.push(valeurs[valeurs.length - 1]!)
+      const contenu = [...svg.childNodes].map((node) => new XMLSerializer().serializeToString(node)).join('')
+      morceaux.push(`<g display="${i === 0 ? 'inline' : 'none'}"><animate attributeName="display" calcMode="discrete" values="${valeurs.join(';')}" keyTimes="${dates.join(';')}" dur="${duree}s" repeatCount="indefinite"/>${sansCommentaires(contenu)}</g>`)
+      avance?.(i + 1, images)
+      // nextTick seul ne rend pas la main aux clics d'annulation ni au navigateur.
+      if (i % 10 === 0) await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    }
+    arrete(signal)
+    return new Blob([
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${taille}" height="${taille}" viewBox="${viewBoxExport(DEMI_ECRAN)}">`,
+      ...morceaux,
+      '</svg>'
+    ], { type: 'image/svg+xml' })
+  } finally {
+    lecteur.ferme()
+  }
+}
 
 /**
  * Exporte le cycle en MP4.

@@ -15,6 +15,7 @@ import {
   copieTexte,
   cycleVersGif,
   cycleVersMp4,
+  cycleVersSvg,
   svgAutonome,
   telecharge,
   versGifAnime,
@@ -629,7 +630,9 @@ async function exporteCycle() {
   try {
     const mp4 = format === 'mp4'
     // La video n'a pas d'alpha : elle impose le blanc. Le GIF, lui, garde le choix.
-    const fichier = mp4
+    const fichier = format === 'svg'
+      ? await cycleVersSvg(reglages, blocs, taille, images, suit, controle.signal)
+      : mp4
       ? await cycleVersMp4(reglages, blocs, taille, images, pas, BLANC, suit, controle.signal)
       : await cycleVersGif(
           reglages,
@@ -641,7 +644,7 @@ async function exporteCycle() {
           suit,
           controle.signal
         )
-    telecharge(fichier, nomFichier(nomDeCycle(cycle.value), '', '', mp4 ? 'mp4' : 'gif'))
+    telecharge(fichier, nomFichier(nomDeCycle(cycle.value), '', '', format))
     dialogueCycle.value = false
   } catch (e) {
     // Un abandon n'est pas un echec : on ne signale pas a quelqu'un qu'il a obtenu ce

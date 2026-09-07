@@ -121,14 +121,12 @@ export const GIF_TAILLE = 320
 /* --------------------------------------------------- export d'un cycle */
 
 /**
- * Formats d'export d'un CYCLE. Pas de SVG anime ici, et c'est mesure : sur un
- * cycle le corps morphe a chaque image, or son chemin pese 2,5 ko — six cents
- * images en feraient 1,5 Mo, sans compter les arcs. Le SVG anime ne tient que
- * pour l'avatar au repos, ou la silhouette est immobile.
+ * Formats d'export d'un cycle. Le SVG conserve les images en vectoriel ;
+ * les longs cycles peuvent donc peser davantage qu'un export raster.
  */
-export type FormatCycle = 'mp4' | 'gif'
+export type FormatCycle = 'mp4' | 'gif' | 'svg'
 
-export const FORMATS_CYCLE: FormatCycle[] = ['mp4', 'gif']
+export const FORMATS_CYCLE: FormatCycle[] = ['mp4', 'gif', 'svg']
 export const FORMAT_CYCLE_DEFAUT: FormatCycle = 'mp4'
 
 /**
@@ -144,8 +142,8 @@ export const FORMAT_CYCLE_DEFAUT: FormatCycle = 'mp4'
  * monter le debit de 93 a 342 kbps seulement. A 320 px et 93 kbps, l'export avait
  * la definition d'une vignette : c'est ce qui lui donnait un air de GIF.
  */
-export const CYCLE_FPS = { gif: 20, mp4: 30 } as const
-export const CYCLE_TAILLE = { gif: 320, mp4: 1024 } as const
+export const CYCLE_FPS = { gif: 20, mp4: 30, svg: 30 } as const
+export const CYCLE_TAILLE = { gif: 320, mp4: 1024, svg: 1024 } as const
 
 export const cyclePas = (format: FormatCycle) => 1 / CYCLE_FPS[format]
 

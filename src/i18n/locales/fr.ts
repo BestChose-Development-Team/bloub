@@ -89,6 +89,8 @@ export default {
     cycle_mp4: 'Vidéo MP4',
     cycle_mp4_aide: 'Léger et fluide, fond obligatoire',
     cycle_gif: 'GIF animé',
+    cycle_svg: 'SVG animé',
+    cycle_svg_aide: 'Vectoriel transparent, agrandissable ; cycles longs plus lourds',
     cycle_gif_aide: 'Lu partout, plus lourd',
     cycleProgress: 'Export en cours…',
     cycleReessayer: 'Réessayer',

@@ -122,7 +122,7 @@ describe('export d un cycle', () => {
 
   it('ne propose ni SVG anime ni format hors video', () => {
     // le corps morphe a chaque image : 2,5 ko de chemin fois six cents images
-    expect(FORMATS_CYCLE).toEqual(['mp4', 'gif'])
+    expect(FORMATS_CYCLE).toEqual(['mp4', 'gif', 'svg'])
     expect(FORMATS_CYCLE).toContain(FORMAT_CYCLE_DEFAUT)
   })
 
