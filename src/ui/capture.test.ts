@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
 import { BotEngine } from '@/bot/engine'
-import { blockAt, defaultCycle, offsetOf, type Block } from '@/bot/cycles'
+import { blockAt, defaultCycle, offsetOf, totalDuration, type Block } from '@/bot/cycles'
 import { RAYON } from '@/bot/repere'
-import { SHAPE_BY_ID } from '@/bot/skins'
+import { SHAPES, SHAPE_BY_ID } from '@/bot/skins'
 import { EXPRESSION_BY_ID } from '@/bot/expressions'
-import { cycleVersSvg, ouvreCycle } from './capture'
+import { cycleVersSvg, ouvreCycle, sequenceDuBot } from './capture'
 import { DEMI_ECRAN, viewBoxExport } from './export'
 
 /**
@@ -23,6 +23,23 @@ import { DEMI_ECRAN, viewBoxExport } from './export'
 const REGLAGES = { shape: 'cercle', color: 'encre', expression: 'neutre' }
 const TAILLE = 128
 
+describe('formes avatar et montage', () => {
+  it('exporte chaque forme personnalisee et conserve le nuage dans le montage', async () => {
+    const avatars: string[] = []
+    const montages: string[] = []
+    for (const shape of SHAPES) {
+      const settings = { ...REGLAGES, shape: shape.id }
+      avatars.push((await sequenceDuBot(settings, TAILLE, 1, 1, corpsDe))[0]!)
+      const reader = await ouvreCycle(settings, [{ state: 'idle', duration: 2.4 }], TAILLE)
+      try { montages.push(corpsDe(await reader.rendre(0))) }
+      finally { reader.ferme() }
+    }
+    expect(new Set(avatars).size).toBe(SHAPES.length)
+    expect(new Set(montages).size).toBe(1)
+    expect(montages[0]).toBe(avatars[SHAPES.findIndex(s => s.id === 'nuage')])
+  })
+})
+
 describe('export SVG du cycle', () => {
   it('conserve les formes et references de chaque image dans une boucle autonome', async () => {
     const blocs = defaultCycle().blocks
@@ -34,7 +51,7 @@ describe('export SVG du cycle', () => {
     const animations = [...doc.querySelectorAll('animate')]
     expect(animations).toHaveLength(12)
     for (const animation of animations) {
-      expect(animation.getAttribute('dur')).toBe('31.2s')
+      expect(animation.getAttribute('dur')).toBe(`${totalDuration(blocs)}s`)
       expect(animation.getAttribute('repeatCount')).toBe('indefinite')
     }
     const ids = [...doc.querySelectorAll('[id]')].map((el) => el.id)
@@ -50,7 +67,7 @@ describe('export SVG du cycle', () => {
     try {
       for (let i = 0; i < animations.length; i++) {
         const frame = animations[i]!.parentElement!
-        const source = await lecteur.rendre(i * 31.2 / 12)
+        const source = await lecteur.rendre(i * totalDuration(blocs) / 12)
         expect(frame.querySelector('mask path')!.getAttribute('d')).toBe(corpsDe(source))
       }
     } finally {
@@ -84,7 +101,8 @@ function moteurAuMemeInstant(blocs: Block[], t: number) {
     RAYON,
     blocs[0]!.state,
     SHAPE_BY_ID.get(REGLAGES.shape)!.radii,
-    EXPRESSION_BY_ID.get(REGLAGES.expression)!
+    EXPRESSION_BY_ID.get(REGLAGES.expression)!,
+    true
   )
   const { index } = blockAt(blocs, t)
   for (let i = 1; i <= index; i++) e.setState(blocs[i]!.state, offsetOf(blocs, i))

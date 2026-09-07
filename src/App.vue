@@ -622,7 +622,8 @@ async function exporteCycle() {
     gradient: gradient.value,
     gradientType: gradientType.value,
     gradientAngle: gradientAngle.value,
-    expression: expression.value
+    // Les presets du montage gardent leur visage, independamment du Customizer.
+    expression: DEFAULT_EXPRESSION
   }
   const suit = (fait: number, total: number) => (avancementCycle.value = fait / total)
 
@@ -917,11 +918,12 @@ watch(
             :cycle="played"
             :size="preview ? 560 : 440"
             :shape="forme"
+            :preset-idle="view === 'animations'"
             :color="color"
             :gradient="gradient"
             :gradient-type="gradientType"
             :gradient-angle="gradientAngle"
-            :expression="humeur ?? expression"
+            :expression="view === 'animations' ? DEFAULT_EXPRESSION : (humeur ?? expression)"
             :follow="view === 'reglages'"
             :gaze="intro ? INTRO_GAZE : null"
           />
@@ -1003,6 +1005,7 @@ watch(
           <div class="mt-2 grid grid-cols-4 gap-1.5">
             <BotTile
               v-for="s in order"
+              preset-idle
               :key="s.id"
               :label="t(`states.${s.id}`)"
               :selected="s.id === state"
@@ -1012,7 +1015,7 @@ watch(
               :gradient="gradient"
               :gradient-type="gradientType"
               :gradient-angle="gradientAngle"
-              :expression="expression"
+              :expression="DEFAULT_EXPRESSION"
               :frozen-at="POSES[s.id]"
               @click="addBlock(s.id)"
             />
@@ -1056,7 +1059,7 @@ watch(
       :gradient="gradient"
       :gradient-type="gradientType"
       :gradient-angle="gradientAngle"
-      :expression="expression"
+      :expression="DEFAULT_EXPRESSION"
       @seek="onSeek"
       @preview="preview = true"
         @exporter="dialogueCycle = true"

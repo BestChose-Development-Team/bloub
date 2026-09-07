@@ -404,6 +404,7 @@ export async function ouvreCycle(
         ...reglages,
         size: taille,
         cycle: blocs,
+        presetIdle: true,
         /*
          * Le moteur se construit sur l'etat qu'on lui donne, et l'image 0 doit
          * etre le PREMIER etat du montage. Sans cette prop le modele prenait son

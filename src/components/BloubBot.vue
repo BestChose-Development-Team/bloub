@@ -28,6 +28,8 @@ const props = withDefaults(
     size?: number
     /** identifiant de forme du personnalisateur */
     shape?: string
+    /** Utilise la silhouette idle du preset dans les montages. */
+    presetIdle?: boolean
     /** identifiant de couleur du personnalisateur */
     color?: string
     /** identifiant du degrade du corps, `none` conserve la couleur unie */
@@ -109,7 +111,7 @@ const gradientVector = computed(() => {
 })
 const expression = computed(() => EXPRESSION_BY_ID.get(props.expression) ?? null)
 
-const engine = new BotEngine(R, state.value, shapeRadii.value, expression.value)
+const engine = new BotEngine(R, state.value, shapeRadii.value, expression.value, props.presetIdle)
 const frame = shallowRef<BotFrame>(engine.sample(props.frozenAt ?? 0))
 const uid = Math.random().toString(36).slice(2, 8)
 const maskId = `bot-mask-${uid}`
@@ -443,6 +445,10 @@ watch(expression, (expr) => {
  * premiere image et l'animation exportee ne bouge pas.
  */
 watch(() => props.frozenAt, redrawFrozen)
+watch(() => props.presetIdle, (preset) => {
+  engine.presetIdle = preset
+  redrawFrozen()
+})
 
 /**
  * L'ecoute du pointeur ne vit que le temps du suivi. `immediate` parce que la

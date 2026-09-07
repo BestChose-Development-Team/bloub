@@ -25,6 +25,7 @@ withDefaults(
     frozenAt: number
     state?: StateId
     shape?: string
+    presetIdle?: boolean
     color?: string
     gradient?: string
     gradientType?: 'linear' | 'radial'
@@ -57,6 +58,7 @@ withDefaults(
       :state="state"
       :size="size"
       :shape="shape"
+      :preset-idle="presetIdle"
       :color="color"
       :gradient="gradient"
       :gradient-type="gradientType"

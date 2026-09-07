@@ -406,6 +406,7 @@ function onRulerMove(e: PointerEvent) {
                    que dans l'etiquette du bouton, pour le lecteur d'ecran -->
               <span class="flex min-w-0 flex-1 items-center justify-center">
                 <BloubBot
+                  preset-idle
                   v-if="width(i) > 44"
                   class="shrink-0"
                   :state="b.state"

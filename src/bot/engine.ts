@@ -167,7 +167,9 @@ export class BotEngine {
     scale = 100,
     initial: StateId = 'idle',
     shape: number[] | null = null,
-    expression: BotExpression | null = null
+    expression: BotExpression | null = null,
+    /** Le montage conserve la silhouette idle du preset ; l'avatar est personnalisable. */
+    public presetIdle = false
   ) {
     this.scale = scale
     this.cur = initial
@@ -273,7 +275,7 @@ export class BotEngine {
     expr: BotExpression | null
   ): Pose {
     let pose = def.pose(t)
-    if (def.baseBody && shape) {
+    if (def.baseBody && shape && !(this.presetIdle && def.id === 'idle')) {
       // on garde la pose (rotation, decalage, squash) et on n'echange que le profil
       pose = { ...pose, sil: { ...pose.sil, radii: shape } }
     }
@@ -296,6 +298,9 @@ export class BotEngine {
    * donc sans identite, et il n'existe dans aucune table.
    */
   private decalageAtTime(now: number, state: StateId): { x: number; y: number } {
+    if (this.presetIdle && state === 'idle') {
+      return decalageDesYeux(null, state, this.expr?.id ?? null)
+    }
     /**
      * Un axe de morph : on lit la table sur ses deux BORNES et on interpole avec sa
      * courbe. Jamais sur la valeur interpolee — celle-la n'a pas d'identite et n'existe

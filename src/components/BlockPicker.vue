@@ -103,6 +103,7 @@ function pick(state: StateId) {
   >
     <div class="grid grid-cols-4 gap-1.5">
       <BotTile
+        preset-idle
         v-for="s in PALETTE"
         :key="s.id"
         :label="t(`states.${s.id}`)"
