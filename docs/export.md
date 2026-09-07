@@ -186,9 +186,17 @@ ball radius: 140, past the tight frame's 125. Nothing clamps those radii at runt
 the hand-tuned `RINGS`/`SWOOSH` tables in `decor.ts` that keep them under 158. A test locks
 the relationship.
 
-**No animated SVG here.** It worked at rest only because the body was static. Over a cycle
-the body path changes every frame and weighs 2.5 kB, so six hundred frames would be 1.5 MB
-before counting the arcs.
+**Animated SVG is also available for whole cycles.** Unlike the lightweight avatar SVG,
+this is a vector flipbook at 30 fps: each frame keeps the live renderer's complete geometry,
+masks, gradients, particles and drawing order. A discrete SMIL display animation shows one
+frame at a time and loops over the exact cycle duration. IDs and their references are scoped
+to each frame. No scripts, external assets or embedded bitmaps are needed; the background is
+transparent. The screen viewBox keeps the rings inside the export.
+
+This preserves scalable geometry, not continuous interpolation. Long cycles can be larger
+and use more memory than GIF or MP4: the changing body alone weighs about 2.5 kB per frame.
+Only serialized vector frames are accumulated, and export yields periodically for progress
+and cancellation. The off-screen renderer is released on completion, cancellation or failure.
 
 **`frozenAt` does not walk the montage, and `seek` is not enough either.** `apply()` dates
 the engine with `clock`, which only advances in the rAF loop and therefore stays at 0 while

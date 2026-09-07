@@ -5,7 +5,7 @@ import { blockAt, defaultCycle, offsetOf, type Block } from '@/bot/cycles'
 import { RAYON } from '@/bot/repere'
 import { SHAPE_BY_ID } from '@/bot/skins'
 import { EXPRESSION_BY_ID } from '@/bot/expressions'
-import { ouvreCycle } from './capture'
+import { cycleVersSvg, ouvreCycle } from './capture'
 import { DEMI_ECRAN, viewBoxExport } from './export'
 
 /**
@@ -22,6 +22,51 @@ import { DEMI_ECRAN, viewBoxExport } from './export'
 
 const REGLAGES = { shape: 'cercle', color: 'encre', expression: 'neutre' }
 const TAILLE = 128
+
+describe('export SVG du cycle', () => {
+  it('conserve les formes et references de chaque image dans une boucle autonome', async () => {
+    const blocs = defaultCycle().blocks
+    const blob = await cycleVersSvg(REGLAGES, blocs, TAILLE, 12)
+    expect(blob.type).toBe('image/svg+xml')
+    const doc = new DOMParser().parseFromString(await blob.text(), 'image/svg+xml')
+    expect(doc.querySelector('parsererror')).toBeNull()
+    expect(doc.querySelector('svg')!.getAttribute('viewBox')).toBe(viewBoxExport(DEMI_ECRAN))
+    const animations = [...doc.querySelectorAll('animate')]
+    expect(animations).toHaveLength(12)
+    for (const animation of animations) {
+      expect(animation.getAttribute('dur')).toBe('31.2s')
+      expect(animation.getAttribute('repeatCount')).toBe('indefinite')
+    }
+    const ids = [...doc.querySelectorAll('[id]')].map((el) => el.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const element of doc.querySelectorAll('*')) {
+      for (const attr of [...element.attributes]) {
+        for (const match of attr.value.matchAll(/url\(#([^)]+)\)/g)) {
+          expect(ids).toContain(match[1])
+        }
+      }
+    }
+    const lecteur = await ouvreCycle(REGLAGES, blocs, TAILLE)
+    try {
+      for (let i = 0; i < animations.length; i++) {
+        const frame = animations[i]!.parentElement!
+        const source = await lecteur.rendre(i * 31.2 / 12)
+        expect(frame.querySelector('mask path')!.getAttribute('d')).toBe(corpsDe(source))
+      }
+    } finally {
+      lecteur.ferme()
+    }
+    expect(doc.querySelector('script, image, foreignObject')).toBeNull()
+  })
+
+  it('annule et libere le lecteur sans livrer un fichier partiel', async () => {
+    const avant = document.body.childElementCount
+    const controle = new AbortController()
+    await expect(cycleVersSvg(REGLAGES, defaultCycle().blocks, TAILLE, 12,
+      () => controle.abort(), controle.signal)).rejects.toMatchObject({ name: 'Abandon' })
+    expect(document.body.childElementCount).toBe(avant)
+  })
+})
 
 /** Le `d` du corps, tel que le composant l'a mis dans le masque. */
 function corpsDe(svg: SVGSVGElement) {

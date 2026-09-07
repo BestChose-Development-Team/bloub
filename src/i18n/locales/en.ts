@@ -61,7 +61,7 @@ const en: typeof fr = {
     svg: 'Download SVG',
     anime: 'Download animated SVG',
     gif: 'Download animated GIF',
-    cycleDetail: 'The video is lighter and smoother; the GIF plays anywhere.',
+    cycleDetail: 'Choose video, animated GIF or scalable animated SVG.',
     cycleFormat: 'Format',
     cycle_mp4: 'MP4 video',
     cycle_mp4_aide: 'Light and smooth, needs a background',

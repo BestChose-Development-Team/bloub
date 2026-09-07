@@ -66,7 +66,7 @@ const zh: typeof fr = {
     svg: '下载 SVG',
     anime: '下载 SVG 动图',
     gif: '下载 GIF 动图',
-    cycleDetail: '视频更轻更流畅；GIF 到处都能播放。',
+    cycleDetail: '选择视频、GIF 动图或可缩放的 SVG 动画。',
     cycleFormat: '格式',
     cycle_mp4: 'MP4 视频',
     cycle_mp4_aide: '轻巧流畅，必须有背景',

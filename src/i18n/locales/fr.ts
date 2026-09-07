@@ -84,7 +84,7 @@ export default {
     svg: 'Télécharger le SVG',
     anime: "Télécharger l'animation SVG",
     gif: 'Télécharger le GIF animé',
-    cycleDetail: 'La vidéo est plus légère et plus fluide ; le GIF passe partout.',
+    cycleDetail: 'Choisissez une vidéo, un GIF animé ou un SVG animé redimensionnable.',
     cycleFormat: 'Format',
     cycle_mp4: 'Vidéo MP4',
     cycle_mp4_aide: 'Léger et fluide, fond obligatoire',
