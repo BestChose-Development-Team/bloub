@@ -163,8 +163,8 @@ body,
    * dans le flux et accompagne le geste. En `absolute` il accompagne la page.
    */
   position: absolute;
-  /* degage le rail, qui flotte (`fixed left-4`) et ne reserve rien dans la scene */
-  left: 6rem;
+  /* marge de page : le rail est desormais centre en haut */
+  left: 2rem;
   /* legerement sous le bord : c'est ce qui fait mordre les lettres par l'ecran */
   bottom: -0.1em;
   pointer-events: none;
@@ -172,12 +172,12 @@ body,
   line-height: 0.78;
   /*
    * Dimensionne d'apres la place REELLEMENT disponible, et non en `vw` seul : le
-   * mot part a 6rem du bord gauche, donc une taille proportionnelle a la fenetre
+   * mot part a 2rem du bord gauche, donc une taille proportionnelle a la fenetre
    * finissait par pousser le dernier B au-dela du bord droit. 3,05 est la largeur
    * de « BLOUB » en cadratins a ce poids et cet interlettrage — mesuree, pas
    * estimee — et le reste est la marge qu'on lui laisse a droite.
    */
-  font-size: clamp(80px, calc((100vw - 7rem) / 3.05), 268px);
+  font-size: clamp(80px, calc((100vw - 3rem) / 3.05), 268px);
   font-weight: 900;
   letter-spacing: -0.045em;
   /*
@@ -375,6 +375,10 @@ body,
 
   .scene--gauche {
     grid-template-columns: 20rem minmax(0, 1fr) 0;
+  }
+
+  .scene--deux {
+    grid-template-columns: 20rem minmax(0, 1fr) 20rem;
   }
 
   /*

@@ -167,6 +167,7 @@ export type StateId =
   | "orbit"
   | "burst"
   | "comet"
+  | "bounce"
   /** transition d'interface, pas une animation du catalogue : hors `SEQUENCE` */
   | "swirl"
   | "cloudAttentive";
@@ -224,6 +225,43 @@ export const STATES: StateDef[] = [
           radii: [...SHAPE_BY_ID.get("nuage")!.radii],
         },
       }),
+  },
+
+  {
+    id: "bounce",
+    duration: 1.6,
+    // Les deux bonds et le retour a la pose neutre doivent rester visibles.
+    minDuration: 1.6,
+    morph: 0.35,
+    blinkIn: false,
+    baseBody: true,
+    baseFace: true,
+    pose: (t) => {
+      // Une duree de bloc superieure a 1,6 s tient la pose finale au lieu de
+      // relancer le mouvement ou de continuer a extrapoler.
+      const p = clamp(t / 1.6);
+      const firstHop = p < 0.55 ? Math.sin((p / 0.55) * Math.PI) : 0;
+      const secondHop =
+        p >= 0.55 && p < 0.9 ? Math.sin(((p - 0.55) / 0.35) * Math.PI) : 0;
+      const lift = firstHop * 0.32 + secondHop * 0.12;
+
+      // Deux impacts courts : un grand a 55 %, puis un plus leger a 90 %.
+      const firstImpact = Math.exp(-Math.pow((p - 0.55) / 0.045, 2));
+      const secondImpact = Math.exp(-Math.pow((p - 0.9) / 0.04, 2));
+      const impact = firstImpact + secondImpact;
+      const airborne = clamp(lift / 0.32);
+
+      return base({
+        // Y negatif = vers le haut. Le decalage porte le corps et le visage.
+        offY: -lift,
+        // Le moteur remplace seulement les rayons quand une forme personnalisee
+        // est choisie : ce squash & stretch est donc conserve pour toutes les formes.
+        sil: circle(1, {
+          sx: 1 + impact * 0.12 - airborne * 0.05,
+          sy: 1 - impact * 0.14 + airborne * 0.08,
+        }),
+      });
+    },
   },
 
   {
@@ -635,10 +673,12 @@ export const POSES: Record<StateId, number> = {
   burst: 0.45,
   comet: 1.15,
   cloudAttentive: 1,
+  bounce: 0.44,
 };
 
 export const SEQUENCE: StateId[] = [
   "idle",
+  "bounce",
   "thinking",
   "wink",
   "wide",

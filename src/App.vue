@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import BotTile from '@/components/BotTile.vue'
+import AnimationShapeEditor from '@/components/AnimationShapeEditor.vue'
 import Customizer from '@/components/Customizer.vue'
 import BloubBot from '@/components/BloubBot.vue'
 import ExportBar from '@/components/ExportBar.vue'
@@ -55,6 +56,22 @@ import {
   type Cycle
 } from '@/bot/cycles'
 import { DEFAULT_EXPRESSION, EXPRESSION_BY_ID } from '@/bot/expressions'
+import {
+  animationColor,
+  animationExpression,
+  animationGradient,
+  animationGradientAngle,
+  animationGradientType,
+  animationShape,
+  parseAnimationAppearances,
+  resetAnimationAppearance,
+  setAnimationColor,
+  setAnimationExpression,
+  setAnimationGradient,
+  setAnimationGradientAngle,
+  setAnimationGradientType,
+  setAnimationShape
+} from '@/bot/appearance'
 import {
   COLOR_BY_ID,
   DEFAULT_COLOR,
@@ -235,6 +252,7 @@ window.addEventListener('pagehide', enregistreCycles)
 // La personnalisation est la vue d'accueil, sauf si l'URL designe un etat
 // precis : dans ce cas le lien vise clairement le lecteur.
 const view = ref<ViewId>(initial.named ? 'animations' : 'personnaliser')
+const editingState = ref<StateId | null>(null)
 
 /**
  * Apercu : la scene seule, sans barre laterale, sans panneau ni montage. On en
@@ -382,6 +400,7 @@ watch(view, (now, before) => {
   // d'accueil, ou elle depose la boule a sa place. Seul un lien `#etat=` suivi
   // pendant ces deux secondes peut y arriver, mais alors c'est lui qui commande.
   intro.value = false
+  if (now !== 'animations') editingState.value = null
   // On ne memorise la position qu'en QUITTANT le lecteur : passer de la
   // personnalisation aux reglages ne doit pas ecraser la position gardee par le
   // zero qu'on vient d'y poser.
@@ -444,7 +463,11 @@ const nue = computed(() => intro.value && block.value < POSE_AT)
  * la boule est seule aucune des deux : c'est en rendant sa largeur au panneau de
  * droite qu'on la fait glisser a sa place.
  */
-const gauche = computed(() => !nue.value && view.value === 'reglages')
+const gauche = computed(
+  () =>
+    !nue.value &&
+    (view.value === 'reglages' || (view.value === 'animations' && editingState.value !== null))
+)
 const droite = computed(() => !nue.value && view.value !== 'reglages')
 
 /* ------------------------------------------------------------------- skins */
@@ -462,12 +485,14 @@ const gradientType = ref(
 const expression = ref(
   stored('expression', DEFAULT_EXPRESSION, (v) => EXPRESSION_BY_ID.has(v))
 )
+const animationAppearances = ref(parseAnimationAppearances(lis('animationAppearances')))
 
 watch(shape, (v) => ecris('forme', v))
 watch(color, (v) => ecris('couleur', v))
 watch(gradient, (v) => ecris('degrade', v))
 watch(gradientType, (v) => ecris('degradeType', v))
 watch(expression, (v) => ecris('expression', v))
+watch(animationAppearances, (v) => ecris('animationAppearances', JSON.stringify(v)))
 
 /**
  * Nom du produit, en capitales pour le grand mot du pied de page. PAS traduit —
@@ -534,6 +559,96 @@ watch(view, (v) => {
 })
 
 const order = computed(() => SEQUENCE.map((id) => STATES.find((s) => s.id === id)!))
+
+function shapeFor(id: StateId) {
+  return animationShape(id, shape.value, animationAppearances.value)
+}
+
+function colorFor(id: StateId) {
+  return animationColor(id, color.value, animationAppearances.value)
+}
+
+function expressionFor(id: StateId) {
+  return animationExpression(id, DEFAULT_EXPRESSION, animationAppearances.value)
+}
+
+function gradientFor(id: StateId) {
+  return animationGradient(id, gradient.value, animationAppearances.value)
+}
+
+function gradientTypeFor(id: StateId) {
+  return animationGradientType(id, gradientType.value, animationAppearances.value)
+}
+
+function gradientAngleFor(id: StateId) {
+  return animationGradientAngle(id, gradientAngle.value, animationAppearances.value)
+}
+
+function editAnimation(id: StateId) {
+  editingState.value = editingState.value === id ? null : id
+}
+
+function updateAnimationShape(value: string) {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationShape(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function updateAnimationColor(value: string) {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationColor(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function updateAnimationGradient(value: string) {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationGradient(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function updateAnimationGradientType(value: 'linear' | 'radial') {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationGradientType(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function updateAnimationGradientAngle(value: number) {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationGradientAngle(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function updateAnimationExpression(value: string) {
+  if (!editingState.value) return
+  animationAppearances.value = setAnimationExpression(
+    animationAppearances.value,
+    editingState.value,
+    value
+  )
+}
+
+function resetEditedAppearance() {
+  if (!editingState.value) return
+  animationAppearances.value = resetAnimationAppearance(
+    animationAppearances.value,
+    editingState.value
+  )
+}
 
 /** Ajoute une animation a la fin du montage courant. */
 function addBlock(id: StateId) {
@@ -618,6 +733,7 @@ async function exporteCycle() {
   const taille = CYCLE_TAILLE[format]
   const reglages = {
     shape: shape.value,
+    animationAppearances: animationAppearances.value,
     color: color.value,
     gradient: gradient.value,
     gradientType: gradientType.value,
@@ -846,13 +962,16 @@ watch(
       class="scene min-h-full items-stretch justify-center p-8 max-lg:flex max-lg:flex-col max-lg:gap-10 max-lg:px-5"
       :class="[
         !preview && view === 'animations' && 'pb-[calc(var(--timeline)_+_1rem)]',
-        // Sous 64rem le rail passe en bande HAUTE (cf. `SideRail`), et il flotte
-        // comme il flottait a gauche : la scene doit lui reserver sa hauteur,
-        // sinon le premier element de la pile lui passe dessous. Sauf en apercu,
-        // le seul cas ou le rail est DEMONTE — y reserver sa place descendait
-        // l'avatar de 80 px pour rien.
-        !preview && 'max-lg:pt-20',
-        nue || preview ? 'scene--seule' : view === 'reglages' && 'scene--gauche'
+        // Le rail flotte en bande haute a toutes les largeurs : la scene reserve
+        // sa hauteur, sauf en apercu ou il est demonte.
+        !preview && 'pt-20',
+        nue || preview
+          ? 'scene--seule'
+          : view === 'reglages'
+            ? 'scene--gauche'
+            : view === 'animations' && editingState
+              ? 'scene--deux'
+              : undefined
       ]"
     >
       <!--
@@ -871,16 +990,35 @@ watch(
            non sur la colonne : cette vue n'a pas de barre de montage, donc la
            colonne va jusqu'en bas de la fenetre et un centrage dessus ferait
            descendre le panneau d'une centaine de pixels selon l'onglet. -->
-      <!-- `lg:pl-14` : le rail flotte au-dessus de la scene, qui ne lui reserve
-           plus de place — sinon il decalerait l'avatar vers la droite. Ce panneau
-           est le seul contenu qui arrive assez a gauche pour passer dessous, donc
-           c'est LUI qui s'ecarte, et pas la scene entiere. -->
       <aside
         v-if="!preview"
-        class="panneau scene__gauche w-full lg:flex lg:h-[calc(100dvh_-_3rem_-_var(--timeline))] lg:w-80 lg:shrink-0 lg:flex-col lg:justify-center lg:self-start lg:-translate-y-12 lg:pl-14"
-        :class="gauche ? 'panneau--ouvert max-lg:order-2' : 'max-lg:hidden'"
+        class="panneau scene__gauche w-full lg:flex lg:h-[calc(100dvh_-_3rem_-_var(--timeline))] lg:w-80 lg:shrink-0 lg:flex-col lg:self-start"
+        :class="[
+          gauche ? 'panneau--ouvert max-lg:order-2' : 'max-lg:hidden',
+          view === 'reglages' ? 'lg:justify-center lg:-translate-y-12' : 'lg:pt-1'
+        ]"
       >
-        <Settings />
+        <Settings v-if="view === 'reglages'" />
+        <AnimationShapeEditor
+          v-else-if="editingState"
+          :state="editingState"
+          :shape="shapeFor(editingState)"
+          :overridden="Boolean(animationAppearances[editingState])"
+          :appearance="animationAppearances[editingState]"
+          :color="colorFor(editingState)"
+          :gradient="gradientFor(editingState)"
+          :gradient-type="gradientTypeFor(editingState)"
+          :gradient-angle="gradientAngleFor(editingState)"
+          :expression="expressionFor(editingState)"
+          @close="editingState = null"
+          @reset="resetEditedAppearance"
+          @update:shape="updateAnimationShape"
+          @update:color="updateAnimationColor"
+          @update:gradient="updateAnimationGradient"
+          @update:gradient-type="updateAnimationGradientType"
+          @update:gradient-angle="updateAnimationGradientAngle"
+          @update:expression="updateAnimationExpression"
+        />
       </aside>
 
       <!-- scene. Sa hauteur ne doit pas dependre du panneau de droite : etiree
@@ -918,6 +1056,7 @@ watch(
             :cycle="played"
             :size="preview ? 560 : 440"
             :shape="forme"
+            :animation-appearances="view === 'animations' ? animationAppearances : undefined"
             :preset-idle="view === 'animations'"
             :color="color"
             :gradient="gradient"
@@ -1009,15 +1148,20 @@ watch(
               :key="s.id"
               :label="t(`states.${s.id}`)"
               :selected="s.id === state"
+              editable
+              :editing="s.id === editingState"
+              :edit-label="t('panel.animationEdit', { state: t(`states.${s.id}`) })"
               :state="s.id"
-              :shape="shape"
-              :color="color"
-              :gradient="gradient"
+              :animation-appearances="animationAppearances"
+              :shape="shapeFor(s.id)"
+              :color="colorFor(s.id)"
+              :gradient="gradientFor(s.id)"
               :gradient-type="gradientType"
               :gradient-angle="gradientAngle"
-              :expression="DEFAULT_EXPRESSION"
+              :expression="expressionFor(s.id)"
               :frozen-at="POSES[s.id]"
               @click="addBlock(s.id)"
+              @edit="editAnimation(s.id)"
             />
           </div>
         </template>
@@ -1055,6 +1199,8 @@ watch(
       v-model:playing="playing"
       :elapsed="elapsed"
       :shape="shape"
+      :animation-appearances="animationAppearances"
+      :inspector-open="editingState !== null"
       :color="color"
       :gradient="gradient"
       :gradient-type="gradientType"
@@ -1062,7 +1208,7 @@ watch(
       :expression="DEFAULT_EXPRESSION"
       @seek="onSeek"
       @preview="preview = true"
-        @exporter="dialogueCycle = true"
+      @exporter="dialogueCycle = true"
     />
   </template>
 </template>

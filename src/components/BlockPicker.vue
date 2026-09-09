@@ -3,13 +3,21 @@ import { ref } from 'vue'
 import BotTile from '@/components/BotTile.vue'
 import { POSES, SEQUENCE, STATE_BY_ID, type StateId } from '@/bot/states'
 import { t } from '@/i18n'
+import {
+  animationColor,
+  animationExpression,
+  animationGradient,
+  animationShape,
+  type AnimationAppearances
+} from '@/bot/appearance'
 
 /**
  * Carte « + » de la piste et sa palette. Ajouter depuis la piste evite d'aller
  * jusqu'au panneau de droite quand on monte.
  */
-defineProps<{
+const props = defineProps<{
   shape: string
+  animationAppearances: AnimationAppearances
   color: string
   gradient: string
   gradientType: 'linear' | 'radial'
@@ -20,6 +28,22 @@ const emit = defineEmits<{ pick: [state: StateId] }>()
 
 /** Les animations dans l'ordre de la video. */
 const PALETTE = SEQUENCE.map((id) => STATE_BY_ID.get(id)!)
+
+function shapeFor(state: StateId) {
+  return animationShape(state, props.shape, props.animationAppearances)
+}
+
+function colorFor(state: StateId) {
+  return animationColor(state, props.color, props.animationAppearances)
+}
+
+function gradientFor(state: StateId) {
+  return animationGradient(state, props.gradient, props.animationAppearances)
+}
+
+function expressionFor(state: StateId) {
+  return animationExpression(state, props.expression, props.animationAppearances)
+}
 
 /** Largeur de la palette, en pixels — elle sert aussi a la caler. */
 const WIDTH = 288
@@ -109,12 +133,13 @@ function pick(state: StateId) {
         :label="t(`states.${s.id}`)"
         :selected="false"
         :state="s.id"
-        :shape="shape"
-        :color="color"
-        :gradient="gradient"
+        :animation-appearances="animationAppearances"
+        :shape="shapeFor(s.id)"
+        :color="colorFor(s.id)"
+        :gradient="gradientFor(s.id)"
         :gradient-type="gradientType"
         :gradient-angle="gradientAngle"
-        :expression="expression"
+        :expression="expressionFor(s.id)"
         :frozen-at="POSES[s.id]"
         @click="pick(s.id)"
       />

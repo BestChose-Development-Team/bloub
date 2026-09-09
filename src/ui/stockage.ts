@@ -20,6 +20,7 @@ const NOMS = [
   'degradeType',
   'degradeAngle',
   'expression',
+  'animationAppearances',
   'langue'
 ] as const
 

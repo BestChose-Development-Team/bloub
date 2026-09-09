@@ -14,6 +14,7 @@ import { createApp, h, nextTick, ref } from 'vue'
 import BloubBot from '@/components/BloubBot.vue'
 import { totalDuration, type Block } from '@/bot/cycles'
 import type { GradientType } from '@/bot/skins'
+import type { AnimationAppearances } from '@/bot/appearance'
 import { gifAnime, gifIndexe, indexe, nouvellePalette, recense, svgAnime } from './anime'
 import { arrete, DEMI_ECRAN, sansCommentaires, viewBoxExport } from './export'
 
@@ -307,6 +308,7 @@ export async function cycleVersGif(
 /** Ce que le bot doit porter sur l'animation exportee. */
 export interface ReglagesBot {
   shape: string
+  animationAppearances?: AnimationAppearances
   color: string
   gradient?: string
   gradientType?: GradientType

@@ -27,25 +27,12 @@ const muted = ref<ViewId | null>(null)
 </script>
 
 <template>
-  <!--
-    Deux dispositions, et c'est la mise en page de la page qui les impose.
-
-    A partir de 64rem la scene est une grille de trois colonnes bordee de marges
-    larges : le rail flotte dans celle de gauche sans rien recouvrir. En dessous
-    tout s'empile sur la largeur entiere, et ce meme flottement tombait en plein
-    milieu du contenu — mesure a 375 px : la pilule couvrait le titre du panneau
-    des animations et le flanc gauche de l'avatar dans les reglages.
-
-    Il passe donc en BANDE HAUTE, horizontale et centree, et la scene lui reserve
-    sa hauteur (`max-lg:pt-20` dans `App.vue`). En haut et pas en bas : la barre
-    de montage occupe deja le bas de la fenetre dans les animations, et empiler
-    les deux prenait 260 px sur 812.
-  -->
+  <!-- Navigation unique, horizontale et centree en haut a toutes les largeurs. -->
   <nav
-    class="fixed top-3 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-[var(--line)] bg-white/85 p-1.5 shadow-sm backdrop-blur lg:top-1/2 lg:left-4 lg:translate-x-0 lg:-translate-y-1/2"
+    class="fixed top-3 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-[var(--line)] bg-white/85 p-1.5 shadow-sm backdrop-blur"
     :aria-label="t('rail.nav')"
   >
-    <ul class="flex gap-1 lg:flex-col">
+    <ul class="flex gap-1">
       <li
         v-for="item in ITEMS"
         :key="item.id"
@@ -131,16 +118,9 @@ const muted = ref<ViewId | null>(null)
           `:has()`, Chromium ne reevalue pas `:focus-visible` et l'infobulle
           restait collee a l'ecran.
         -->
-        <!--
-          L'infobulle suit le rail : sous le bouton quand la barre est en haut, a
-          sa droite quand elle est sur le flanc. Elle ne fait que se FONDRE sur
-          petit ecran, la ou elle glisse a partir de 64rem : le glissement s'ecrit
-          sur `translate-x`, deja pris par le centrage horizontal en bande haute,
-          et deux valeurs sur le meme axe s'ecrasent au lieu de se composer.
-        -->
         <span
-          class="pointer-events-none absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-lg bg-[var(--ink)] px-2.5 py-1.5 text-xs whitespace-nowrap text-[var(--paper)] opacity-0 transition peer-focus-visible:opacity-100 group-hover:opacity-100 lg:top-1/2 lg:left-full lg:mt-0 lg:ml-2 lg:-translate-y-1/2 lg:translate-x-1 lg:peer-focus-visible:translate-x-0 lg:group-hover:translate-x-0"
-          :class="muted === item.id && 'opacity-0! lg:translate-x-1!'"
+          class="pointer-events-none absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-lg bg-[var(--ink)] px-2.5 py-1.5 text-xs whitespace-nowrap text-[var(--paper)] opacity-0 transition peer-focus-visible:opacity-100 group-hover:opacity-100"
+          :class="muted === item.id && 'opacity-0!'"
           role="tooltip"
         >
           {{ item.label }}

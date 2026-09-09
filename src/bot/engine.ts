@@ -143,9 +143,13 @@ export class BotEngine {
   private shape: number[] | null = null
   private shapePrev: number[] | null = null
   private shapeAt = -10
+  private shapeForced = false
+  private shapeForcedPrev = false
   private expr: BotExpression | null = null
   private exprPrev: BotExpression | null = null
   private exprAt = -10
+  private exprForced = false
+  private exprForcedPrev = false
   private look: Look = NO_LOOK
   private lookPrev: Look = NO_LOOK
   private lookAt = -10
@@ -178,13 +182,24 @@ export class BotEngine {
   }
 
   /**
-   * Expression de repos choisie dans le personnalisateur. Comme la forme, elle
-   * glisse vers la nouvelle valeur au lieu de sauter.
+   * Expression choisie dans le personnalisateur. `forced` autorise une
+   * personnalisation propre a remplacer aussi le visage d'un preset anime.
    */
-  setExpression(expression: BotExpression | null, now = 0) {
-    if (expression === this.expr) return
+  setExpression(expression: BotExpression | null, now = 0, forced = false) {
+    if (expression === this.expr && forced === this.exprForced) return
     this.exprPrev = this.expr
+    this.exprForcedPrev = this.exprForced
     this.expr = expression
+    this.exprForced = forced
+    this.exprAt = now
+  }
+
+  /** Replace l'expression sans morph lors d'un rembobinage d'export. */
+  resetExpression(expression: BotExpression | null, now = 0, forced = false) {
+    this.exprPrev = expression
+    this.exprForcedPrev = forced
+    this.expr = expression
+    this.exprForced = forced
     this.exprAt = now
   }
 
@@ -199,17 +214,31 @@ export class BotEngine {
   }
 
   /**
-   * Forme choisie dans le personnalisateur. Elle ne remplace le corps que sur
-   * les etats au repos (`baseBody`) : sur les autres, la silhouette EST
-   * l'animation et ne doit pas etre ecrasee.
+   * Forme choisie dans le personnalisateur. Par defaut elle ne remplace que les
+   * etats `baseBody`; `forced` ouvre aussi les silhouettes des presets animes.
    *
    * Le changement se fait en morph, pas d'un coup : comme toutes les formes sont
    * echantillonnees aux memes angles, il suffit d'interpoler les rayons.
    */
-  setShape(radii: number[] | null, now = 0) {
-    if (radii === this.shape) return
+  setShape(radii: number[] | null, now = 0, forced = false) {
+    if (radii === this.shape && forced === this.shapeForced) return
     this.shapePrev = this.shape
+    this.shapeForcedPrev = this.shapeForced
     this.shape = radii
+    this.shapeForced = forced
+    this.shapeAt = now
+  }
+
+  /**
+   * Replace la forme sans morph. Sert au rembobinage d'un export : la premiere
+   * image d'une nouvelle passe ne doit pas fondre depuis la derniere forme de
+   * la passe precedente.
+   */
+  resetShape(radii: number[] | null, now = 0, forced = false) {
+    this.shapePrev = radii
+    this.shapeForcedPrev = forced
+    this.shape = radii
+    this.shapeForced = forced
     this.shapeAt = now
   }
 
@@ -272,14 +301,20 @@ export class BotEngine {
     def: StateDef,
     t: number,
     shape: number[] | null,
-    expr: BotExpression | null
+    expr: BotExpression | null,
+    shapeForced = this.shapeForced,
+    exprForced = this.exprForced
   ): Pose {
     let pose = def.pose(t)
-    if (def.baseBody && shape && !(this.presetIdle && def.id === 'idle')) {
+    if (
+      (def.baseBody || shapeForced) &&
+      shape &&
+      (!(this.presetIdle && def.id === 'idle') || shapeForced)
+    ) {
       // on garde la pose (rotation, decalage, squash) et on n'echange que le profil
       pose = { ...pose, sil: { ...pose.sil, radii: shape } }
     }
-    if (def.baseFace && expr) {
+    if ((def.baseFace || exprForced) && expr) {
       pose = { ...pose, gaze: expr.gaze, split: expr.split, eyes: expr.eyes }
     }
     return pose
@@ -375,7 +410,14 @@ export class BotEngine {
     if (this.departFige) return this.departFige
     if (!this.prev) return null
     const prevDef = STATE_BY_ID.get(this.prev)!
-    return this.posed(prevDef, Math.max(0, now - this.tPrev), shape, expr)
+    return this.posed(
+      prevDef,
+      Math.max(0, now - this.tPrev),
+      shape,
+      expr,
+      this.shapeForcedPrev,
+      this.exprForcedPrev
+    )
   }
 
   /**

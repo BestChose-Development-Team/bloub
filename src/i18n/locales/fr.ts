@@ -45,9 +45,13 @@ export default {
     shape: "Forme",
     expression: "Expression",
     color: "Couleur",
+    body: "Corps",
+    solidColor: "Couleur unie",
     colorHex: "HEX personnalisé",
     colorPicker: "Choisir une couleur personnalisée",
     gradient: "Dégradé",
+    gradientApply: "Appliquer le dégradé",
+    gradientCancel: "Retirer le dégradé",
     gradientLinear: "Linéaire",
     gradientRadial: "Radial",
     gradientAngle: "Angle",
@@ -60,6 +64,13 @@ export default {
     gradientSwap: "Inverser les couleurs du dégradé",
     gradientStartPicker: "Choisir la couleur de début",
     gradientEndPicker: "Choisir la couleur de fin",
+    animationEditTitle: "Personnalisation de l’animation",
+    animationPersonalize: "Personnaliser",
+    animationEditFor: "Animation · {state}",
+    animationEdit: "Personnaliser {state}",
+    animationEditClose: "Fermer la personnalisation",
+    animationAppearanceReset: "Utiliser les réglages généraux",
+    animationColorHint: "Une couleur propre remplace le dégradé général pour cette animation.",
   },
 
   gradients: {
@@ -184,6 +195,7 @@ export default {
     comet: "Comète",
     swirl: "Tourbillon",
     cloudAttentive: "Nuage attentif",
+    bounce: "Rebond",
   },
 
   shapes: {

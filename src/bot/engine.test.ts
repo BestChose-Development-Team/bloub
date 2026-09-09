@@ -192,9 +192,9 @@ describe('etats', () => {
    * transition d'interface, choisie et non mesuree — il ne doit donc jamais
    * apparaitre dans le catalogue, et le rester est precisement ce qu'on verifie.
    */
-  it('garde les 14 etats de la video dans la sequence, et rien d autre', () => {
-    expect(SEQUENCE).toHaveLength(14)
-    expect(new Set(SEQUENCE).size).toBe(14)
+  it('garde les 16 etats du catalogue, et rien d autre', () => {
+    expect(SEQUENCE).toHaveLength(16)
+    expect(new Set(SEQUENCE).size).toBe(16)
     for (const id of SEQUENCE) expect(STATES.some((s) => s.id === id), id).toBe(true)
   })
 
@@ -204,10 +204,37 @@ describe('etats', () => {
   })
 
   it('montre le visage sur les etats a visage, le cache sur les autres', () => {
-    const avec: StateId[] = ['idle', 'wink', 'wide', 'notify', 'egg', 'hexagon']
+    const avec: StateId[] = ['idle', 'bounce', 'wink', 'wide', 'notify', 'egg', 'hexagon']
     const sans: StateId[] = ['thinking', 'alert', 'exclaim', 'sleep']
     for (const id of avec) expect(new BotEngine(100, id).sample(0.9).eyes.length).toBe(2)
     for (const id of sans) expect(new BotEngine(100, id).sample(0.9).eyes.length).toBe(0)
+  })
+
+  it('fait deux bonds, se tasse aux impacts puis retrouve sa pose', () => {
+    const e = new BotEngine(100, 'bounce')
+    const mesure = (t: number) => {
+      const points = anchors(e.sample(t).bodyPath)
+      const xs = points.map(([x]) => x)
+      const ys = points.map(([, y]) => y)
+      return {
+        x: (Math.min(...xs) + Math.max(...xs)) / 2,
+        y: (Math.min(...ys) + Math.max(...ys)) / 2,
+        w: Math.max(...xs) - Math.min(...xs),
+        h: Math.max(...ys) - Math.min(...ys)
+      }
+    }
+
+    const depart = mesure(0)
+    const premierSommet = mesure(0.44)
+    const premierImpact = mesure(0.88)
+    const secondSommet = mesure(1.16)
+    const arrivee = mesure(1.6)
+
+    expect(premierSommet.y).toBeLessThan(depart.y - 20)
+    expect(secondSommet.y).toBeLessThan(premierImpact.y - 5)
+    expect(premierImpact.w).toBeGreaterThan(premierImpact.h)
+    expect(Math.abs(arrivee.x - depart.x)).toBeLessThan(2)
+    expect(Math.abs(arrivee.y - depart.y)).toBeLessThan(2)
   })
 
   it('creuse une encoche autour de la pastille de notification', () => {

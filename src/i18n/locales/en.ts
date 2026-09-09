@@ -28,9 +28,13 @@ const en: typeof fr = {
     shape: "Shape",
     expression: "Expression",
     color: "Colour",
+    body: "Body",
+    solidColor: "Solid colour",
     colorHex: "Custom HEX",
     colorPicker: "Choose a custom colour",
     gradient: "Gradient",
+    gradientApply: "Apply gradient",
+    gradientCancel: "Remove gradient",
     gradientLinear: "Linear",
     gradientRadial: "Radial",
     gradientAngle: "Angle",
@@ -43,6 +47,13 @@ const en: typeof fr = {
     gradientSwap: "Swap gradient colours",
     gradientStartPicker: "Choose the start colour",
     gradientEndPicker: "Choose the end colour",
+    animationEditTitle: "Animation customisation",
+    animationPersonalize: "Customise",
+    animationEditFor: "Animation · {state}",
+    animationEdit: "Customise {state}",
+    animationEditClose: "Close customisation",
+    animationAppearanceReset: "Use the general settings",
+    animationColorHint: "A custom colour replaces the general gradient for this animation.",
   },
 
   gradients: {
@@ -158,6 +169,7 @@ const en: typeof fr = {
     comet: "Comet",
     swirl: "Swirl",
     cloudAttentive: "Cloud attentive",
+    bounce: "Bounce",
   },
 
   shapes: {

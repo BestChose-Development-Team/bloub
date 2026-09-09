@@ -22,12 +22,23 @@ import {
 import { blockAt, defaultCycle, offsetOf, type Block } from '@/bot/cycles'
 import { DEMI_VIEWBOX, RAYON } from '@/bot/repere'
 import { STATE_BY_ID, type StateId } from '@/bot/states'
+import {
+  animationColor,
+  animationExpression,
+  animationGradient,
+  animationGradientAngle,
+  animationGradientType,
+  animationShape,
+  type AnimationAppearances
+} from '@/bot/appearance'
 
 const props = withDefaults(
   defineProps<{
     size?: number
     /** identifiant de forme du personnalisateur */
     shape?: string
+    /** forme propre a chaque animation d'un montage */
+    animationAppearances?: AnimationAppearances
     /** Utilise la silhouette idle du preset dans les montages. */
     presetIdle?: boolean
     /** identifiant de couleur du personnalisateur */
@@ -69,6 +80,7 @@ const props = withDefaults(
   {
     size: 320,
     shape: DEFAULT_SHAPE,
+    animationAppearances: () => ({}),
     color: DEFAULT_COLOR,
     gradient: DEFAULT_GRADIENT,
     gradientType: DEFAULT_GRADIENT_TYPE,
@@ -100,18 +112,43 @@ const elapsed = defineModel<number>('elapsed', { default: 0 })
 const R = RAYON
 const VB = DEMI_VIEWBOX
 
-const shapeRadii = computed(() => SHAPE_BY_ID.get(props.shape)?.radii ?? null)
-const ink = computed(() => resolveColor(props.color))
-const bodyGradient = computed(() => resolveGradient(props.gradient))
+function radiiFor(id: StateId) {
+  const shape = animationShape(id, props.shape, props.animationAppearances)
+  return SHAPE_BY_ID.get(shape)?.radii ?? null
+}
+
+function expressionFor(id: StateId) {
+  const expression = animationExpression(id, props.expression, props.animationAppearances)
+  return EXPRESSION_BY_ID.get(expression) ?? null
+}
+
+const shapeForcedFor = (id: StateId) => Boolean(props.animationAppearances[id]?.shape)
+const expressionForcedFor = (id: StateId) => Boolean(props.animationAppearances[id]?.expression)
+
+const shapeRadii = computed(() => radiiFor(state.value))
+const ink = computed(() =>
+  resolveColor(animationColor(state.value, props.color, props.animationAppearances))
+)
+const bodyGradient = computed(() =>
+  resolveGradient(animationGradient(state.value, props.gradient, props.animationAppearances))
+)
+const activeGradientType = computed(() =>
+  animationGradientType(state.value, props.gradientType, props.animationAppearances)
+)
+const activeGradientAngle = computed(() =>
+  animationGradientAngle(state.value, props.gradientAngle, props.animationAppearances)
+)
 const gradientVector = computed(() => {
-  const angle = (Number.isFinite(props.gradientAngle) ? props.gradientAngle : 135) * Math.PI / 180
+  const angle = (Number.isFinite(activeGradientAngle.value) ? activeGradientAngle.value : 135) * Math.PI / 180
   const x = Math.sin(angle), y = -Math.cos(angle)
   const extent = VB * (Math.abs(x) + Math.abs(y))
   return { x: x * extent, y: y * extent }
 })
-const expression = computed(() => EXPRESSION_BY_ID.get(props.expression) ?? null)
+const expression = computed(() => expressionFor(state.value))
 
 const engine = new BotEngine(R, state.value, shapeRadii.value, expression.value, props.presetIdle)
+engine.setShape(shapeRadii.value, 0, shapeForcedFor(state.value))
+engine.setExpression(expression.value, 0, expressionForcedFor(state.value))
 const frame = shallowRef<BotFrame>(engine.sample(props.frozenAt ?? 0))
 const uid = Math.random().toString(36).slice(2, 8)
 const maskId = `bot-mask-${uid}`
@@ -138,6 +175,8 @@ function apply(i: number, from = 0) {
   blockStart = clock - from
   elapsed.value = from
   state.value = b.state
+  engine.setShape(radiiFor(b.state), clock, shapeForcedFor(b.state))
+  engine.setExpression(expressionFor(b.state), clock, expressionForcedFor(b.state))
   engine.setState(b.state, clock)
   nextAt = playing.value ? blockStart + b.duration : Infinity
 }
@@ -189,6 +228,7 @@ function rendAt(t: number) {
   if (index !== dernierBloc) {
     const b = blocs[index]!
     state.value = b.state
+    const offset = offsetOf(blocs, index)
     /*
      * Un RETOUR EN ARRIERE repart sans historique, la ou une avancee normale garde l'etat
      * quitte pour le fondre. Sans cette distinction, rejouer l'image 0 apres une passe
@@ -197,8 +237,15 @@ function rendAt(t: number) {
      * une boule sans yeux. Le lecteur est ainsi idempotent, et une passe peut etre rejouee
      * autant de fois qu'on veut.
      */
-    if (index < dernierBloc) engine.reset(b.state, offsetOf(blocs, index))
-    else engine.setState(b.state, offsetOf(blocs, index))
+    if (index < dernierBloc) {
+      engine.resetShape(radiiFor(b.state), offset, shapeForcedFor(b.state))
+      engine.resetExpression(expressionFor(b.state), offset, expressionForcedFor(b.state))
+      engine.reset(b.state, offset)
+    } else {
+      engine.setShape(radiiFor(b.state), offset, shapeForcedFor(b.state))
+      engine.setExpression(expressionFor(b.state), offset, expressionForcedFor(b.state))
+      engine.setState(b.state, offset)
+    }
     dernierBloc = index
   }
   frame.value = engine.sample(t)
@@ -393,6 +440,8 @@ watch(block, (i) => {
 // la pose de l'etat PRECEDENT : le point d'exclamation revenait au depart de sa
 // course pendant une image, treize fois dans le montage par defaut.
 watch(state, (id) => {
+  engine.setShape(radiiFor(id), clock, shapeForcedFor(id))
+  engine.setExpression(expressionFor(id), clock, expressionForcedFor(id))
   // `rendAt` ou `apply` l'a deja applique, et a la bonne date
   if (engine.state === id) return
   engine.setState(id, clock)
@@ -429,12 +478,12 @@ watch(
 watch(shapeRadii, (radii) => {
   // on passe l'horloge : le moteur morphe vers la nouvelle forme au lieu de
   // l'appliquer d'un coup
-  engine.setShape(radii, clock)
+  engine.setShape(radii, clock, shapeForcedFor(state.value))
   redrawFrozen()
 })
 
 watch(expression, (expr) => {
-  engine.setExpression(expr, clock)
+  engine.setExpression(expr, clock, expressionForcedFor(state.value))
   redrawFrozen()
 })
 
@@ -518,7 +567,7 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
   >
     <defs>
       <linearGradient
-        v-if="bodyGradient && props.gradientType === 'linear'"
+        v-if="bodyGradient && activeGradientType === 'linear'"
         :id="bodyGradientId"
         gradientUnits="userSpaceOnUse"
         :x1="-gradientVector.x"
@@ -534,7 +583,7 @@ function dotAttrs(dot: BotFrame['dots'][number]) {
         />
       </linearGradient>
       <radialGradient
-        v-if="bodyGradient && props.gradientType === 'radial'"
+        v-if="bodyGradient && activeGradientType === 'radial'"
         :id="bodyGradientId"
         gradientUnits="userSpaceOnUse"
         cx="0"

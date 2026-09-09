@@ -33,9 +33,13 @@ const zh: typeof fr = {
     shape: "形状",
     expression: "表情",
     color: "颜色",
+    body: "主体",
+    solidColor: "纯色",
     colorHex: "自定义 HEX",
     colorPicker: "选择自定义颜色",
     gradient: "渐变颜色",
+    gradientApply: "应用渐变",
+    gradientCancel: "取消渐变",
     gradientLinear: "线性",
     gradientRadial: "径向",
     gradientAngle: "渐变角度",
@@ -48,6 +52,13 @@ const zh: typeof fr = {
     gradientSwap: "交换渐变颜色",
     gradientStartPicker: "选择渐变起始颜色",
     gradientEndPicker: "选择渐变结束颜色",
+    animationEditTitle: "动画个性化",
+    animationPersonalize: "个性化",
+    animationEditFor: "动画 · {state}",
+    animationEdit: "个性化{state}",
+    animationEditClose: "关闭个性化面板",
+    animationAppearanceReset: "使用全局设置",
+    animationColorHint: "单独设置颜色后，该动画将不再使用全局渐变。",
   },
 
   gradients: {
@@ -160,6 +171,7 @@ const zh: typeof fr = {
     comet: "彗星",
     swirl: "漩涡",
     cloudAttentive: "专注云",
+    bounce: "弹跳",
   },
 
   shapes: {

@@ -16,6 +16,7 @@ import {
   type Cycle
 } from '@/bot/cycles'
 import type { StateId } from '@/bot/states'
+import type { AnimationAppearances } from '@/bot/appearance'
 import { MAX_ZOOM, MIN_ZOOM, mmss } from '@/ui/timeline'
 import { nomDeCycle, pluriel, t } from '@/i18n'
 
@@ -33,6 +34,8 @@ const props = defineProps<{
   gradientType: 'linear' | 'radial'
   gradientAngle: number
   expression: string
+  animationAppearances: AnimationAppearances
+  inspectorOpen?: boolean
 }>()
 
 /**
@@ -158,7 +161,8 @@ function onRemove() {
     Le filet du haut dit ou la page s'arrete de defiler.
   -->
   <div
-    class="fixed inset-x-0 bottom-0 z-30 h-[var(--timeline)] px-6 pt-3 pb-5 max-lg:border-t max-lg:border-[var(--line)] max-lg:bg-[var(--paper)] max-lg:px-5 lg:right-[24.5rem] lg:left-[4.5rem]"
+    class="fixed inset-x-0 bottom-0 z-30 h-[var(--timeline)] px-6 pt-3 pb-5 max-lg:border-t max-lg:border-[var(--line)] max-lg:bg-[var(--paper)] max-lg:px-5 lg:right-[24.5rem]"
+    :class="inspectorOpen ? 'lg:left-[24.5rem]' : 'lg:left-[4.5rem]'"
   >
     <!-- lecture : flottante au-dessus de la piste, au centre, le temps ecoule a
          gauche et la duree totale a droite.
@@ -256,6 +260,7 @@ function onRemove() {
         :blocks="blocks"
         :elapsed="elapsed"
         :shape="shape"
+        :animation-appearances="animationAppearances"
         :color="color"
         :gradient="gradient"
         :gradient-type="gradientType"

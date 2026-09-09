@@ -11,6 +11,13 @@ import {
   type Block
 } from '@/bot/cycles'
 import { POSES, type StateId } from '@/bot/states'
+import {
+  animationColor,
+  animationExpression,
+  animationGradient,
+  animationShape,
+  type AnimationAppearances
+} from '@/bot/appearance'
 import { BASE_SCALE, clampZoom, ticksFor } from '@/ui/timeline'
 import { secondes, secondesCourtes, t } from '@/i18n'
 
@@ -30,6 +37,7 @@ const props = defineProps<{
   gradientType: 'linear' | 'radial'
   gradientAngle: number
   expression: string
+  animationAppearances: AnimationAppearances
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +73,22 @@ function width(index: number) {
 
 function label(index: number) {
   return t(`states.${props.blocks[index]!.state}`)
+}
+
+function shapeFor(state: StateId) {
+  return animationShape(state, props.shape, props.animationAppearances)
+}
+
+function colorFor(state: StateId) {
+  return animationColor(state, props.color, props.animationAppearances)
+}
+
+function gradientFor(state: StateId) {
+  return animationGradient(state, props.gradient, props.animationAppearances)
+}
+
+function expressionFor(state: StateId) {
+  return animationExpression(state, props.expression, props.animationAppearances)
 }
 
 /* ------------------------------------------------------- defilement, loupe */
@@ -410,13 +434,14 @@ function onRulerMove(e: PointerEvent) {
                   v-if="width(i) > 44"
                   class="shrink-0"
                   :state="b.state"
+                  :animation-appearances="animationAppearances"
                   :size="Math.min(56, Math.max(30, width(i) * 0.5))"
-                  :shape="shape"
-                  :color="color"
-                  :gradient="gradient"
+                  :shape="shapeFor(b.state)"
+                  :color="colorFor(b.state)"
+                  :gradient="gradientFor(b.state)"
                   :gradient-type="gradientType"
                   :gradient-angle="gradientAngle"
-                  :expression="expression"
+                  :expression="expressionFor(b.state)"
                   :paper="i === block ? '#ffffff' : '#f2f2f2'"
                   :frozen-at="POSES[b.state]"
                 />
@@ -470,6 +495,7 @@ function onRulerMove(e: PointerEvent) {
           <li class="w-[72px] shrink-0 pl-1">
             <BlockPicker
               :shape="shape"
+              :animation-appearances="animationAppearances"
               :color="color"
               :gradient="gradient"
               :gradient-type="gradientType"

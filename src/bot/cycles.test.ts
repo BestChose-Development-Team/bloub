@@ -66,6 +66,7 @@ describe('durees', () => {
     expect(minDurationOf('alert')).toBe(2)
     expect(minDurationOf('burst')).toBe(2.4)
     expect(clampDuration('orbit', 1)).toBe(2.5)
+    expect(clampDuration('bounce', 0.6)).toBe(1.6)
     // un etat qui ignore le temps n a que le plancher
     expect(minDurationOf('idle')).toBe(MIN_BLOCK)
   })
