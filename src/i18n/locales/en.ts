@@ -181,6 +181,11 @@ const en: typeof fr = {
     hexagone: "Hexagon",
     nuage: "Cloud",
     goutte: "Droplet",
+    ellipse: "Ellipse",
+    losange: "Diamond",
+    fleur: "Flower",
+    coeur: "Heart",
+    etoile: "Rounded star",
   },
 
   colors: {

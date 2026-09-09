@@ -207,6 +207,11 @@ export default {
     hexagone: "Hexagone",
     nuage: "Nuage",
     goutte: "Goutte",
+    ellipse: "Ellipse",
+    losange: "Losange",
+    fleur: "Fleur",
+    coeur: "Cœur",
+    etoile: "Étoile arrondie",
   },
 
   colors: {

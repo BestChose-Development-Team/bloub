@@ -33,6 +33,11 @@ export type ShapeId =
   | 'hexagone'
   | 'nuage'
   | 'goutte'
+  | 'ellipse'
+  | 'losange'
+  | 'fleur'
+  | 'coeur'
+  | 'etoile'
 
 export interface BotShape {
   id: ShapeId
@@ -76,6 +81,49 @@ const droplet = normalize(
 /** Capsule couchee : enveloppe de deux disques cote a cote. */
 const capsule = profileFromPolygon(hullOfCircles(-0.42, 0, 0.62, 0.42, 0, 0.62), 0, 0)
 
+/** Ellipse horizontale, assez haute pour que les expressions gardent de l'air. */
+const ellipse = normalize(superellipseProfile(2, 1.12, 0.82), 1.05)
+
+/** Fleur douce a cinq petales, construite comme le nuage mais autour du centre. */
+const flower = normalize(
+  unionOfCirclesProfile([
+    { x: 0, y: 0, r: 0.64 },
+    ...Array.from({ length: 5 }, (_, i) => {
+      const a = -Math.PI / 2 + (i / 5) * Math.PI * 2
+      return { x: Math.cos(a) * 0.45, y: Math.sin(a) * 0.45, r: 0.5 }
+    })
+  ]),
+  1.05
+)
+
+/** Distance angulaire courte, utilisee pour dessiner des bosses sans cassure. */
+function angularBump(angle: number, center: number, width: number): number {
+  const distance = Math.atan2(Math.sin(angle - center), Math.cos(angle - center))
+  return Math.exp(-((distance / width) ** 2))
+}
+
+/** Coeur plein et doux : lisible, mais assez large en haut pour porter les yeux. */
+const heart = normalize(
+  ANGLES.map(
+    (a) =>
+      0.88 +
+      0.17 * angularBump(a, -2.35, 0.5) +
+      0.17 * angularBump(a, -0.79, 0.5) -
+      0.07 * angularBump(a, -Math.PI / 2, 0.28) +
+      0.17 * angularBump(a, Math.PI / 2, 0.4)
+  ),
+  1.06
+)
+
+/** Etoile a cinq branches volontairement arrondies, sans pointes fragiles. */
+const roundedStar = normalize(
+  ANGLES.map((a) => {
+    const wave = (1 + Math.cos(5 * (a + Math.PI / 2))) / 2
+    return 0.7 + 0.34 * wave ** 2
+  }),
+  1.06
+)
+
 export const SHAPES: BotShape[] = [
   { id: 'cercle', radii: new Array(PROFILE_SAMPLES).fill(1) },
   { id: 'galet', radii: pebble },
@@ -88,7 +136,12 @@ export const SHAPES: BotShape[] = [
   // 0deg : sommets a gauche et a droite, donc aretes du haut et du bas plates
   { id: 'hexagone', radii: regularPolygonProfile(6, 1.04, 0.26, 0) },
   { id: 'nuage', radii: cloud },
-  { id: 'goutte', radii: droplet }
+  { id: 'goutte', radii: droplet },
+  { id: 'ellipse', radii: ellipse },
+  { id: 'losange', radii: regularPolygonProfile(4, 1.1, 0.16, 0) },
+  { id: 'fleur', radii: flower },
+  { id: 'coeur', radii: heart },
+  { id: 'etoile', radii: roundedStar }
 ]
 
 // Map indexee par `string` et non par `ShapeId` : les appelants interrogent avec

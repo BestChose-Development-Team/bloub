@@ -183,6 +183,11 @@ const zh: typeof fr = {
     hexagone: "六边形",
     nuage: "云朵",
     goutte: "水滴",
+    ellipse: "椭圆",
+    losange: "菱形",
+    fleur: "花朵",
+    coeur: "爱心",
+    etoile: "圆角星形",
   },
 
   colors: {

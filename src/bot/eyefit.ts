@@ -239,7 +239,11 @@ const DICHOTOMIE = 8
  * reapparaitre 34 debordements. Ici le resultat ne depend pas d'une convergence : chaque
  * direction est resolue exactement, au pas de dichotomie pres.
  */
-function resous(epreuves: Epreuve[]): { x: number; y: number } {
+function resous(
+  epreuves: Epreuve[],
+  directions = DIRECTIONS,
+  dichotomie = DICHOTOMIE
+): { x: number; y: number } {
   if (!epreuves.length) return { x: 0, y: 0 }
 
   /** La marge la plus serree sur toutes les epreuves, pour une translation donnee. */
@@ -293,8 +297,8 @@ function resous(epreuves: Epreuve[]): { x: number; y: number } {
   let secoursY = 0
   let secours = depart
 
-  for (let d = 0; d < DIRECTIONS; d++) {
-    const a = (d / DIRECTIONS) * Math.PI * 2
+  for (let d = 0; d < directions; d++) {
+    const a = (d / directions) * Math.PI * 2
     const ux = Math.cos(a)
     const uy = Math.sin(a)
     if (marge(ux * course, uy * course) < cible) {
@@ -313,7 +317,7 @@ function resous(epreuves: Epreuve[]): { x: number; y: number } {
     // la plus courte distance qui tient, le long de cette direction
     let bas = 0
     let haut = course
-    for (let i = 0; i < DICHOTOMIE; i++) {
+    for (let i = 0; i < dichotomie; i++) {
       const mid = (bas + haut) / 2
       if (marge(ux * mid, uy * mid) >= cible) haut = mid
       else bas = mid
@@ -360,38 +364,62 @@ function dates(def: StateDef): number[] {
 }
 
 /** Le decalage d'une forme sur un etat et une expression, derive comprise. */
-function decalagePour(
-  def: StateDef,
-  radii: number[],
-  expr: BotExpression | null
-): { x: number; y: number } {
-  const epreuves: Epreuve[] = []
-  for (const t of dates(def)) {
+interface EchantillonReference {
+  pose: Pose
+  calContour: Point[]
+  coins: Array<{ visage: Visage; reference: Empreinte[] }>
+}
+
+/** Parties identiques pour toutes les formes, calculees une seule fois par visage. */
+const REFERENCES = new Map<string, EchantillonReference[]>()
+
+function referencesPour(def: StateDef, expr: BotExpression | null): EchantillonReference[] {
+  const key = `${def.id}|${expr?.id ?? ''}`
+  const cached = REFERENCES.get(key)
+  if (cached) return cached
+
+  const samples = dates(def).map((t) => {
     const pose = def.pose(t)
-    const contour = toPoints({ ...pose.sil, radii }, R)
-    const calContour = toPoints(pose.sil, R)
     const v = visageDe(def, pose, expr)
-    // Les quatre coins de la derive bornent la pose nominale, qui est leur centre : la
-    // tester en plus ne changerait aucune marge et coute une epreuve sur cinq.
-    const coins: Visage[] = []
+    const coins: EchantillonReference['coins'] = []
+    // Les quatre coins de la derive bornent la pose nominale, qui est leur centre.
     for (const dy of [-DERIVE_YAW, DERIVE_YAW]) {
       for (const dp of [-DERIVE_PITCH, DERIVE_PITCH]) {
-        coins.push({
+        const visage = {
           ...v,
           gaze: { yaw: v.gaze.yaw + dy, pitch: v.gaze.pitch + dp, roll: v.gaze.roll }
+        }
+        coins.push({
+          visage,
+          reference: empreintes(visage, pose.sil, pose.sil.radii)
         })
       }
     }
-    for (const c of coins) {
+    return { pose, calContour: toPoints(pose.sil, R), coins }
+  })
+  REFERENCES.set(key, samples)
+  return samples
+}
+
+function decalagePour(
+  def: StateDef,
+  radii: number[],
+  expr: BotExpression | null,
+  rapide = false
+): { x: number; y: number } {
+  const epreuves: Epreuve[] = []
+  for (const sample of referencesPour(def, expr)) {
+    const contour = toPoints({ ...sample.pose.sil, radii }, R)
+    for (const coin of sample.coins) {
       epreuves.push({
-        empreintes: empreintes(c, pose.sil, radii),
-        reference: empreintes(c, pose.sil, pose.sil.radii),
+        empreintes: empreintes(coin.visage, sample.pose.sil, radii),
+        reference: coin.reference,
         contour,
-        calContour
+        calContour: sample.calContour
       })
     }
   }
-  return resous(epreuves)
+  return resous(epreuves, rapide ? 8 : DIRECTIONS, rapide ? 7 : DICHOTOMIE)
 }
 
 /** Zero, la valeur commune a tout ce qui n'a rien a corriger. */
@@ -412,6 +440,7 @@ const clef = (state: StateId, expr: string | null) => `${state}|${expr ?? ''}`
  * tableau et le moteur n'a pas a dependre de la prudence de ses appelants.
  */
 function batir(): Map<number[], Map<string, { x: number; y: number }>> {
+  const formesDouces = new Set(['losange', 'fleur', 'coeur', 'etoile'])
   return new Map(
   SHAPES.map((forme) => {
     const par = new Map<string, { x: number; y: number }>()
@@ -419,7 +448,15 @@ function batir(): Map<number[], Map<string, { x: number; y: number }>> {
       if (!def.baseBody) continue
       const expressions = def.baseFace ? [null, ...EXPRESSIONS] : [null]
       for (const expr of expressions) {
-        par.set(clef(def.id, expr?.id ?? null), decalagePour(def, forme.radii, expr))
+        // Le cercle est le profil de reference et sa correction est nulle. Ne
+        // pas lancer le solveur pour ses entrees garde la table rapide lorsque
+        // le catalogue de formes grandit.
+        par.set(
+          clef(def.id, expr?.id ?? null),
+          forme.id === 'cercle'
+            ? { x: 0, y: 0 }
+            : decalagePour(def, forme.radii, expr, formesDouces.has(forme.id))
+        )
       }
     }
     return [forme.radii, par]
